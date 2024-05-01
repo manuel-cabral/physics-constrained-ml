@@ -1,6 +1,6 @@
-# Phy-Informed-Aerofoil-Flow
+# Phisics-Constrained-ML in flow prediction
 
-Mixing potential flow with ML for fast flow field interpolation.
+Enforcing incompressibility and non-dimensionalization on neural networks for fast and accurate flow predictions.
 
 ## Get environment working
 
