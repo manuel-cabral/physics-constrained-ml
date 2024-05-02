@@ -21,7 +21,7 @@ os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
 import args
 from src.utils import get_args, set_torch_dtype, set_seed #, set_torch_multiprocessing
-from src.model_simple import Model
+from src.model import Model
 from generate_data import generate_sobol
 
 # Get args

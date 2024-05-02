@@ -21,7 +21,7 @@ os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
 import args
 from src.utils import get_args, set_torch_dtype, set_seed, ftype_torch #, set_torch_multiprocessing
-from src.model_simple import Model
+from src.model import Model
 from src.plotter_examples import plot_predictions, plot_cylinder
 from generate_data import generate_sobol
 

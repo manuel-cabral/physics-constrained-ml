@@ -25,7 +25,7 @@ os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
 import args
 from src.utils import get_args, set_seed, set_torch_dtype  #, set_torch_multiprocessing
-from src.model_simple import Model
+from src.model import Model
 import src.config
 
 #! Set parameters

@@ -22,7 +22,7 @@ os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
 import args
 from src.utils import get_args, set_torch_dtype, set_seed #, set_torch_multiprocessing
-from src.model_simple import Model
+from src.model import Model
 
 # Get args
 args = get_args(args)
@@ -112,7 +112,7 @@ def main():
     # dataset = load_data('fraenkels_1e3_5e3_1_ypos_fixedR_zoomedin')
     
 
-    from src.model_simple import REDUCED_VARS, NORMALIZE
+    from src.model import REDUCED_VARS, NORMALIZE
     if args.reduce_inputs==True:
         model = Model(dataset, args)
         pi = REDUCED_VARS.forward(model, torch.tensor(dataset['train'][:,:5])).T
