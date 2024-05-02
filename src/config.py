@@ -1,6 +1,5 @@
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import pyvista
 
 plt.rc('text', usetex=True)
 plt.rc('font', size=16)  # use 13 for squared double columns figures
@@ -12,4 +11,3 @@ mpl.rcParams['axes.unicode_minus'] = False
 mpl.rcParams['text.latex.preamble'] = r'\usepackage{amsmath}' #for \text command
 # mpl.rcParams['font.family'] = 'cm'' #for \text command
 plt.style.use('ggplot')
-pyvista.set_plot_theme('dark')

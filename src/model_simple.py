@@ -6,8 +6,6 @@ import torch
 import torch.utils.data
 from functorch import vmap, jacrev, hessian
 import src.utils as utils
-from src.dataset import Dataset
-import src.BEM as BEM
 
 class NORMALIZE(torch.nn.Module):
     def __init__(self, args):
@@ -24,11 +22,9 @@ class NORMALIZE(torch.nn.Module):
             else:
                 offset_m[:,i] = torch.full_like(offset_m[:,0], min_val)
                 range_m[:,i] = torch.full_like(offset_m[:,0], np.abs(max_val - min_val)) # Scale to [-3, 3]
-        # print(6*(input - offset_m)/range_m - 3)
         return 6*(input - offset_m)/range_m - 3
 
-from time import sleep
-class REDUCED_VARS(torch.nn.Module):
+class TRANSFORM_INPUT(torch.nn.Module):
     def __init__(self, args):
         super().__init__()
         self.args = args
@@ -44,27 +40,8 @@ class REDUCED_VARS(torch.nn.Module):
             for i,l in enumerate(self.args.phi):
                 for j,k in enumerate(l):
                     new_vars[:,i] *= torch.pow(input[:,j],k)
-        # print(new_vars)
         return new_vars
-
-class BiasLayer(torch.nn.Module):
-    def __init__(self) -> None:
-        super().__init__()
-        self.bias_layer = torch.nn.Parameter(torch.randn((2)))
     
-    def forward(self, X):
-        # print(f'{self.bias_layer = }')
-        return X + self.bias_layer
-    
-class SHIFT(torch.nn.Module):
-    def __init__(self) -> None:
-        super().__init__()
-        self.bias_layer = torch.nn.Parameter(torch.randn((2)))
-    
-    def forward(self, X):
-        # print(f'{self.bias_layer = }')
-        return X + self.bias_layer
-
 class NN(torch.nn.Module):
     """Create a feed-forward neural network, based on the provided arguments.
 
@@ -80,15 +57,11 @@ class NN(torch.nn.Module):
         input_dim = len(args.x_vars)
         output_dim = 1 if args.kind=='incompressible' else 2
         act = getattr(torch.nn, args.act)() # activation function defined in args.act
-        # self.bias = BiasLayer()
 
         layers = torch.nn.ModuleList()
 
-        # if args.normalize_inputs:
-        #     layers.append(NORMALIZE(args))
-        #     assert len(args.x_vars)==len(args.sampling_box), 'Number of input variables must match the number of sampling boxes.'
         if args.reduce_inputs:
-            layers.append(REDUCED_VARS(args))
+            layers.append(TRANSFORM_INPUT(args))
             input_dim = len(args.phi)
 
         if args.normalize_inputs:
@@ -186,25 +159,19 @@ class Model(object):
             'val_error': [],
         }
 
-    def forward(self, X, kind=None, panels=None):
+    def forward(self, X):
         # returns the predicted velocity field, regardless of 'kind'
 
-        def background(X, kind=None):
+        def background(X):
             # returns the predicted velocity field, regardless of 'kind'
-            if kind is None: kind = self.args.kind
-            predictions = self.curl(X) if kind=='incompressible' else self.nn(X)
-            # predictions = self.nn.bias(predictions)
-            # print(f'{self.bias(predictions) = }')
+            predictions = self.curl(X) if self.args.kind=='incompressible' else self.nn(X)
 
             if self.args.subtract_uniform_flow: 
-                predictions[:,0] += X[:,3]
+                predictions[:,0] += X[:,3] # assumes fourth variable of the input is the background uniform flow
 
             return predictions
 
-        if panels is not None:
-            return BEM.solve_flow(X, panels, backgrnd=background, velocity=BEM.vertex_velocity)
-        
-        return background(X, kind=kind)
+        return background(X)
 
     def loss(self, output, target, X):
         loss = self.loss_function(output, target, reduction=self.args.training_loss_reduction)
@@ -218,7 +185,7 @@ class Model(object):
     def error(self, output, target):
         return torch.norm(output-target,2)/torch.norm(target,2)
 
-    def train(self, extra=0, panels=None):
+    def train(self, extra=0):
         print(f'\n Training starting on {next(self.nn.parameters()).device}...\n')
 
         if len(self.history['val_loss']): # resume training
@@ -252,7 +219,7 @@ class Model(object):
                         uv = uv.cuda(non_blocking=self.args.pin_memory)
                     
                     X = X.to(self.dtype)
-                    uv_nn = self.forward(X, panels=panels)
+                    uv_nn = self.forward(X)
 
                     loss = self.loss(uv_nn, uv, X)
                     error = self.error(uv_nn, uv)
@@ -262,7 +229,7 @@ class Model(object):
                     def closure():
                         if torch.is_grad_enabled(): 
                             self.optimizer.zero_grad()
-                        outputs = self.forward(X, panels=panels)
+                        outputs = self.forward(X)
                         loss = self.loss(outputs, uv, X)
                         if loss.requires_grad:
                             loss.backward()
@@ -274,7 +241,6 @@ class Model(object):
                 # Save training path
                 if mode == 'train': 
                     epoch_params = [p.detach().numpy().copy() for p in self.nn.parameters()]
-                    # print(epoch_params, '\n')
                     self.training_path.append(epoch_params)
 
 
@@ -332,7 +298,7 @@ class Model(object):
 
         return self.epoch
 
-    def predict(self, X, kind=None, panels=None):
+    def predict(self, X, kind=None):
         """Predict the output of the model for input data.
 
         Args:
@@ -355,18 +321,9 @@ class Model(object):
         if next(self.nn.parameters()).device.type == "cuda":
             X = X.to("cuda")
 
-        return self.forward(X, kind, panels=panels)
-
-    def symm(self, X, dim):
-        """
-        Returns the symmetry BC for `X` on dimension `dim`: if X = [1.0, 2.0, 3.0] and `dim=1`, it returns [1.0, 0.0, 3.0].
-        Works similarly for an n-dimensional array: the symm condition will be applied to the most inner dimension.
-        """
-        mask = torch.ones_like(X)
-        mask[..., dim] = 0.0
-        return X * mask # element-wise mult (not matmul)
+        return self.forward(X, kind=kind)
     
-    def transform(self, X):
+    def transform_output(self, X):
         X = X.to(self.dtype)
         out = self.nn(X)
         if self.args.transform_output:
@@ -388,11 +345,8 @@ class Model(object):
                 respect to the input, after the symmetric conditions have been applied (stream-function).
                 The resulting tensor has shape (batch_size,).
         """
-        a = vmap(self.transform)(X)
-        for dim in self.args.symm_on:
-            a -= self.nn(self.symm(X, dim))
-            a += torch.unsqueeze(X[..., dim], dim=1)
-        return a
+
+        return vmap(self.transform_output)(X)
 
     def curl(self, X):
         """
@@ -405,7 +359,7 @@ class Model(object):
             torch.Tensor: A tensor representing the curl of the neural network's output with
                 respect to the input. The resulting tensor has shape (batch_size, 2).
         """
-        J = vmap(jacrev(self.transform))(X) # J.shape = (batch_size, len(Y), len(X))
+        J = vmap(jacrev(self.transform_output))(X) # J.shape = (batch_size, len(Y), len(X))
         J = torch.squeeze(J) # single output
         J = utils.cross_flip_stack(J) # swaps indices 0 & 1, and negates the new value at 1
         return J[..., :2] 
@@ -422,7 +376,7 @@ class Model(object):
                 respect to the input. The resulting tensor has shape (batch_size,).
         """
         # H = vmap(hessian(self.nn))(X) # H.shape = (batch_size, len(Y), len(X), len(X))
-        H = hessian(self.transform)(X) # H.shape = (batch_size, len(Y), len(X), len(X))
+        H = hessian(self.transform_output)(X) # H.shape = (batch_size, len(Y), len(X), len(X))
         H = torch.squeeze(H) # single output
         return H[..., 0, 0] + H[..., 1, 1] # vort = laplacian(psi)
     
@@ -464,12 +418,6 @@ class Model(object):
         }, model_fname)
         print(f"Model has been saved in {model_fname}")
 
-        # folder_path = os.path.join(dir_path, 'checkpoints_list.txt')
-        # if not os.path.exists(folder_path):
-        #     os.makedirs(folder_path)
-        # # with open('checkpoints_list.txt', 'a') as f:
-        #     f.write(f"'{self.args.kind}_{self.model_id}_checkpoint_{self.epoch}', ")
-
     @classmethod
     def load_checkpoint(cls, fname, dataset=None, args=None, initial_optm='adam'):
         checkpoint = torch.load(fname)
@@ -480,11 +428,7 @@ class Model(object):
         epoch = checkpoint['epoch']
         history = checkpoint['history']
         training_path = checkpoint['training_path']
-        if dataset is None:
-            dataset_fname = fname.split("/")[-1].split("_")[0] # model_id
-            dataset = Dataset.load(dataset_fname, args)
-        else:
-            dataset = dataset
+        dataset = dataset
         return cls(dataset, args, model_id, model_state_dict, initial_optm, optimizer_state_dict, epoch, history, training_path)
     
     def _split_dataset(self, dataset):

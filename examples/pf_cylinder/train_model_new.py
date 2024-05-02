@@ -6,8 +6,6 @@ from timeit import default_timer as timer
 from datetime import timedelta
 import torch
 from scipy.linalg import null_space
-plt.style.use('ggplot')
-
 
 # delete if not needed
 ######
@@ -23,6 +21,7 @@ os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 import args
 from src.utils import get_args, set_torch_dtype, set_seed #, set_torch_multiprocessing
 from src.model_simple import Model
+import src.config
 
 # Get args
 args = get_args(args)

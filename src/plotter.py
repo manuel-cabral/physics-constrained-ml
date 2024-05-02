@@ -1,18 +1,7 @@
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import pyvista
-
-plt.rc('text', usetex=True)
-plt.rc('font', size=16)  # use 13 for squared double columns figures
-mpl.rc('xtick', labelsize=16)
-mpl.rc('ytick', labelsize=16)
-mpl.rc('figure', max_open_warning=0)
-mpl.rcParams['axes.linewidth'] = 0.5
-mpl.rcParams['axes.unicode_minus'] = False
-mpl.rcParams['text.latex.preamble'] = r'\usepackage{amsmath}' #for \text command
-# mpl.rcParams['font.family'] = 'cm'' #for \text command
-pyvista.set_plot_theme('dark')
+import src.config
 
 def plot_history(history, loss_str=None, fname="img/history.pdf"):
     """
@@ -73,17 +62,4 @@ def plot_dataset_points(dataset, i=None, fname=None):
         plt.savefig(fname, transparent=True, bbox_inches='tight')
     else:
         plt.show()
-    return
-
-def plot_pyvista_field(mesh, scalars, component=None, fname=None, theme='dark', **plot_args):
-    def take_screenshot(plotter):
-        if bool(fname):
-            if fname.split(".")[-1] in ["svg", "eps", "pdf", "ps", "tex"]:
-                plotter.save_graphic(fname)
-            else:
-                plotter.screenshot(fname, transparent_background=False)
-    pyvista.set_plot_theme(theme)
-    plotter = pyvista.Plotter(off_screen=bool(fname))
-    plotter.add_mesh(mesh, scalars=scalars, component=component, preference="point", **plot_args)
-    plotter.show(cpos="xy", before_close_callback=take_screenshot)
     return
