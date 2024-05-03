@@ -1,45 +1,94 @@
+
+#! Importing libraries
 import numpy as np
 import matplotlib.pyplot as plt
 import os
 import pickle
-plt.style.use('ggplot')
 
-# set seed
-np.random.seed(101)
+# change directory to the root
+######
+from pathlib import Path
+import sys
+path_root = Path(__file__).parents[2]
+sys.path.append(str(path_root))
 
-def streamfunction(x, y, vort, U_inf, R=1):
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
+######
+
+import args
+from src.utils import get_args, set_seed, set_torch_dtype, save_datasets, save_to_pickle, load_pickle, add_noise
+from src.plotter import plot_quantity
+import src.config
+
+#! Set parameters
+# Get args  
+args = get_args(args)
+
+# Set float precision
+set_torch_dtype(args.ftype)
+
+# Set seed for reproducibility
+set_seed(args.seed)
+
+#! Get fields
+def streamfunction(x, y, vort, R=1):
     y = np.abs(y)
     r = np.sqrt(x**2 + y**2)/R
     x, y = x/R, y/R
-    U_inf /= R
     psi = vort*y**2/2 + vort/(2*np.pi)*((1-1/r**2)*y + (x*y*(r**4-1))/(2*r**4)*np.log((r**2-2*x+1)/(r**2+2*x+1)) \
-                +1/2*((1+1/r**4)*(x**2-y**2)-2)*np.arctan(2*y/(r**2-1))) + U_inf*(1-1/r**2)*y 
+                +1/2*((1+1/r**4)*(x**2-y**2)-2)*np.arctan(2*y/(r**2-1))) 
     psi *= R**2
     return psi
 
-def u(x,y,vort,U_inf,R=1):
+def u(x,y,vort,R=1):
     r = np.sqrt(x**2 + y**2)/R
     x, y = x/R, y/R
-    U_inf /= R
     return R**2*(vort*y + vort/(2*np.pi)*(2*y**2/r**4+(1-1/r**2) + x/2*(1-1/r**4+4*y**2/r**6)*np.log((r**2-2*x+1)/(r**2+2*x+1)) \
             + 4*x**2*y**2*(1-1/r**4)/((r**2-2*x+1)*(r**2+2*x+1))-(2*y*(x**2-y**2)/r**6+(1+1/r**4)*y)*np.arctan(2*y/(r**2-1)) \
-            + ((1+1/r**4)*(x**2-y**2)-2)*(x**2-y**2-1)/((r**2-1)**2+4*y**2)) \
-            + U_inf*(1-(x**2-y**2)/r**4))
-def v(x,y,vort,U_inf,R=1):
+            + ((1+1/r**4)*(x**2-y**2)-2)*(x**2-y**2-1)/((r**2-1)**2+4*y**2)))
+
+def v(x,y,vort,R=1):
     r = np.sqrt(x**2 + y**2)/R
     x, y = x/R, y/R
-    U_inf /= R
     return R**2*(-vort/(2*np.pi)*(2*x*y/r**4+y/2*(1-1/r**4+4*x**2/r**6)*np.log((r**2-2*x+1)/(r**2+2*x+1)) \
             + 2*x*y*(x**2-y**2-1)*(1-1/r**4)/((r**2-2*x+1)*(r**2+2*x+1)) \
             - (2*x*(x**2-y**2)/r**6-(1+1/r**4)*x)*np.arctan(2*y/(r**2-1)) \
-            - 2*x*y*((1+1/r**4)*(x**2-y**2)-2)/((r**2-1)**2+4*y**2)) \
-            - U_inf*2*x*y/r**4)
-def velocity(x, y, vort, U_inf, R=1):
-    # U_inf *= -1
-    if y<0: return -u(x,-y,vort,U_inf,R), v(x,-y,vort,U_inf,R)
-    else: return u(x,y,vort,U_inf,R), v(x,y,vort,U_inf,R)
+            - 2*x*y*((1+1/r**4)*(x**2-y**2)-2)/((r**2-1)**2+4*y**2)))
 
-velocity = np.vectorize(velocity)
+def fields(x, y, vort, R=1):
+    # the velocity field is only defined in the upper plane; we make it anti-symmetric with respect to the x-axis
+    if y<0: return -u(x,-y,vort,R), v(x,-y,vort,R), streamfunction(x,-y,vort,R)
+    else: return u(x,y,vort,R), v(x,y,vort,R), streamfunction(x,y,vort,R)
+
+fields = np.vectorize(fields)
+
+def plot_fields(N=200, bounds=[[5e-2, 1],[0, .05]], vort=3,  R=1, add_noise=False):
+    x = np.linspace(*bounds[0], N)
+    y = np.linspace(*bounds[1], N)
+    xx,yy = np.meshgrid(x, y)
+
+    u,v,psi = fields(xx, yy, vort, R)
+    
+    if add_noise: 
+        for q in [u,v,psi]: q = add_noise(q)
+
+    psi_min, psi_max = np.min(psi), np.max(psi)
+    labels = ['$u$', '$v$', '$\psi$']
+    for q in [u,v,psi]:
+        mask = np.sqrt(xx**2 + yy**2) < R
+        u[mask], v[mask] = np.nan, np.nan              
+        psi[mask] = np.nan
+        fig, ax = plot_quantity(q, x, y, label=labels.pop(0))
+        circle = plt.Circle((0,0), R, color='firebrick', fill=True, alpha=.5)
+        ax.add_artist(circle)
+        # ax.streamplot(x, y, u, v, color='k', linewidth=1, density=1.5)
+        a = 3
+        lim = psi_max**(1/a)
+        levels = np.linspace(-lim, lim,30)**a
+        ax.contour(xx, yy, psi, levels=levels, colors='black')
+
+        plt.show()
 
 def sample_points(N_points, bounds):
     points = np.zeros((N_points, len(bounds)))
@@ -50,55 +99,28 @@ def sample_points(N_points, bounds):
         x, y = np.random.uniform(*bounds[0],size=(1,)), np.random.uniform(*bounds[1],size=(1,))
         distance = np.sqrt(x**2 + y**2)
              
-        if distance - points[j,4] >= 0: # points[j,4] is the radius
+        if distance - points[j,3] >= 0: # points[j,3] is the radius
             points[j,0], points[j,1] = x,y
             j += 1
 
-    u, v= velocity(*points.T)
+    return points
 
-    return np.column_stack((points, u, v))
+#! FLAGS
+PLOT_FIELDS = True
+ADD_NOISE = False
 
-def save_to_pickle(folder, fname, data):
-    data = np.nan_to_num(data)
-    file_path = os.path.join(folder, fname)
-    with open(f'{file_path}.pkl', 'wb') as f:
-        pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
-
-def save_datasets(name, bounds, folder='datasets', N_train=int(5e2), N_val=int(1e3), N_test=1, center=(0,0)):
-    dir_path = os.path.dirname(os.path.abspath(__file__))
-    folder_path = os.path.join(dir_path, folder)
-    if not os.path.exists(folder_path):
-        os.makedirs(folder_path)
-
-    N_points = N_train + N_val + N_test
-    complete = sample_points(N_points,bounds)
-
-    complete[:,:2] += center
-
-    dataset = {}
-    dataset['train'], dataset['val'], dataset['test'] = complete[:N_train], complete[N_train:N_train+N_val], complete[N_train+N_val:]
-
-    save_to_pickle(folder_path, name, dataset)
-    return
-
-def load_pickle(path):
-    with open(f'{path}.pkl', 'rb') as f:
-        data = pickle.load(f)
-    return data
-
+#! Save datasets
 def main():
-    len_train = 1e3
-    len_val = 5e3
-    len_test = 1
+    bounds = [[-2.5,2.5],[-2.5,2.5],[.1,3],[.1,1.5]] # x,y,vort,R
 
-    # bounds = [[-2.5,2.5],[0,2.5],[0,10],[.5,5],[.1,1.5]] # x,y,vort,U,R
-    bounds = [[-2.5,2.5],[-2.5,2.5],[.1,3],[0,0],[.1,1.5]] # x,y,vort,U,R
-    # bounds = [[-2.5,2.5],[0,2.5],[0,10],[.5,5],[1,1]] # x,y,vort,U,R
-    # bounds = [[-2.5,2.5],[0,2.5],[0,10],[.5,5],[.1,1.5]] # x,y,vort,U,R
-    # bounds = [[-2,2],[0,1.25],[0,10],[.5,3],[1,1]] # x,y,vort,U,R
-    center = (0,0)
-    # center = (6,6)
-    save_datasets('fraenkels_1e3_5e3_1_uzero', bounds, N_train=int(len_train), N_val=int(len_val), N_test=int(len_test), center=center)
+    if PLOT_FIELDS: plot_fields(N=300, bounds=bounds[:2], vort=1, R=1, add_noise=ADD_NOISE)
+
+    n_train = 1e3
+    n_val = 5e3
+    n_test = 1
+    idx = 0
+    name = f'fraenkels_flow/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}'
+    save_datasets(sample_points, fields, name, bounds, N_train=int(n_train), N_val=int(n_val), N_test=int(n_test))
 
 if __name__=='__main__':
     main()

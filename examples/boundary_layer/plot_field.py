@@ -17,7 +17,7 @@ os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 ######
 
 import args
-from src.utils import get_args, set_seed, set_torch_dtype, ftype_torch #, set_torch_multiprocessing
+from src.utils import get_args, set_seed, set_torch_dtype, load_data, load_pickle, ftype_torch #, set_torch_multiprocessing
 from src.model import Model
 import src.config
 
@@ -32,18 +32,6 @@ set_torch_dtype(args.ftype)
 
 # Set seed for reproducibility
 set_seed(args.seed)
-
-
-def load_pickle(path):
-    with open(f'{path}.pkl', 'rb') as f:
-        data = pickle.load(f)
-    return data
-
-def load_data(name=None, pasta='datasets'):
-    dir_path = os.path.dirname(os.path.abspath(__file__))
-    folder_path = os.path.join(dir_path, pasta)
-    dataset = load_pickle(os.path.join(folder_path,name))
-    return dataset
 
 def load_model(checkpoint, name, args, pasta='datasets', folder='best_models', initial_optm='lbfgs'):
     file_path = os.path.join(os.getcwd(), 'src', folder, f'{checkpoint}')

@@ -2,6 +2,8 @@ import argparse
 import numpy as np
 import torch
 from scipy.stats.qmc import Sobol
+import os
+import pickle
 
 def get_device(device):
     if device in ['cpu','cuda']:
@@ -121,10 +123,6 @@ def compare_torch_models(model_1, model_2):
     if models_differ == 0:
         print('Models match perfectly! :)')
 
-def circle(N, a=1, x0=0, y0=0, t0=0):
-    theta = torch.linspace(0, 2*torch.pi, N+1)[:-1]-t0
-    return torch.stack([a*torch.cos(theta)+x0, a*torch.sin(theta)+y0,theta],dim=1)
-
 def generate_sobol(num_pow, xmin, xmax, seed, add_zero=True, add_lims=True):
     sobol = Sobol(d=1, seed=seed)
     samples = xmin + (xmax - xmin) * sobol.random_base2(num_pow)
@@ -133,3 +131,42 @@ def generate_sobol(num_pow, xmin, xmax, seed, add_zero=True, add_lims=True):
     if add_lims: samples = np.concatenate(([xmin, xmax], samples))
     samples.sort()
     return samples
+
+def save_to_pickle(folder, fname, data):
+    data = np.nan_to_num(data)
+    file_path = os.path.join(folder, fname)
+    with open(f'{file_path}.pkl', 'wb') as f:
+        pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+def save_datasets(sample_points, quantities, name, bounds, folder='datasets', N_train=int(5e2), N_val=int(1e3), N_test=1):
+    dir_path = os.path.dirname(os.path.abspath(__file__))
+    folder_path = os.path.join(dir_path, folder)
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+
+    N_points = N_train + N_val + N_test
+    points = sample_points(N_points, bounds)
+
+    u, v, psi = quantities(*points.T)
+    complete = np.column_stack((points, u, v, psi))
+    
+    dataset = {}
+    dataset['train'], dataset['val'], dataset['test'] = complete[:N_train], complete[N_train:N_train+N_val], complete[N_train+N_val:]
+
+    save_to_pickle(folder_path, name, dataset)
+    return
+
+def load_pickle(path):
+    with open(f'{path}.pkl', 'rb') as f:
+        data = pickle.load(f)
+    return data
+
+def load_data(name, folder='datasets'):
+    dir_path = os.path.dirname(os.path.abspath(__file__))
+    folder_path = os.path.join(dir_path, folder)
+    dataset = load_pickle(os.path.join(folder_path,name))
+    return dataset
+
+def add_noise(quantity, percentage=1e-2):
+    quantity += np.random.normal(0, percentage*np.mean(np.abs(quantity)), quantity.shape)
+    return quantity
