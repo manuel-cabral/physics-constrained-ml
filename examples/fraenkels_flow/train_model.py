@@ -53,7 +53,7 @@ def train_model(dataset, args):
 def change_parameters(args, data_size=5e2):
     args.kind = 'incompressible'
     # args.kind = 'baseline'
-    args.layers = [16]*2
+    args.layers = [16]*4
     args.n_epochs = 2_000
     args.n_epochs_adam = 1_000
     args.learning_rate_adam = 1e-2
@@ -68,11 +68,12 @@ def change_parameters(args, data_size=5e2):
     args.normalize_inputs = False
     args.reduce_inputs = True
     args.transform_output = True
-    # args.sampling_box = [[-2.5,2.5],[0,2.5],[0,10],[.5,5],[.1,1.5]] # x,y,c,U,r
+
+    # args.sampling_box = [[-2.5,2.5],[-2.5,2.5],[.1,3],[.1,1.5]] # x,y,vort,R
 
     args.phi = [[1,0,0,-1],[0,1,0,-1]]
 
-    args.phi_output = [0,0,1,2] # U_inf * y
+    args.phi_output = [0,0,1,2] # vort * R**2
 
     return
 

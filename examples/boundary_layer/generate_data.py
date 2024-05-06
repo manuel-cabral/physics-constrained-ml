@@ -110,7 +110,7 @@ def plot_profile(f_z, v_norm, z_span, z_max=10, fname=None):
 
 #! FLAGS
 PLOT_PROFILE = False
-PLOT_FIELDS = False
+PLOT_FIELDS = True
 ADD_NOISE = False
 
 #! Save datasets

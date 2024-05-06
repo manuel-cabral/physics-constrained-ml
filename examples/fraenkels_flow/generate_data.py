@@ -33,24 +33,24 @@ set_seed(args.seed)
 
 #! Get fields
 def streamfunction(x, y, vort, R=1):
-    y = np.abs(y)
-    r = np.sqrt(x**2 + y**2)/R
+    # y = np.abs(y)
     x, y = x/R, y/R
+    r = np.sqrt(x**2 + y**2)
     psi = vort*y**2/2 + vort/(2*np.pi)*((1-1/r**2)*y + (x*y*(r**4-1))/(2*r**4)*np.log((r**2-2*x+1)/(r**2+2*x+1)) \
                 +1/2*((1+1/r**4)*(x**2-y**2)-2)*np.arctan(2*y/(r**2-1))) 
     psi *= R**2
     return psi
 
 def u(x,y,vort,R=1):
-    r = np.sqrt(x**2 + y**2)/R
     x, y = x/R, y/R
+    r = np.sqrt(x**2 + y**2)
     return R**2*(vort*y + vort/(2*np.pi)*(2*y**2/r**4+(1-1/r**2) + x/2*(1-1/r**4+4*y**2/r**6)*np.log((r**2-2*x+1)/(r**2+2*x+1)) \
             + 4*x**2*y**2*(1-1/r**4)/((r**2-2*x+1)*(r**2+2*x+1))-(2*y*(x**2-y**2)/r**6+(1+1/r**4)*y)*np.arctan(2*y/(r**2-1)) \
             + ((1+1/r**4)*(x**2-y**2)-2)*(x**2-y**2-1)/((r**2-1)**2+4*y**2)))
 
 def v(x,y,vort,R=1):
-    r = np.sqrt(x**2 + y**2)/R
     x, y = x/R, y/R
+    r = np.sqrt(x**2 + y**2)
     return R**2*(-vort/(2*np.pi)*(2*x*y/r**4+y/2*(1-1/r**4+4*x**2/r**6)*np.log((r**2-2*x+1)/(r**2+2*x+1)) \
             + 2*x*y*(x**2-y**2-1)*(1-1/r**4)/((r**2-2*x+1)*(r**2+2*x+1)) \
             - (2*x*(x**2-y**2)/r**6-(1+1/r**4)*x)*np.arctan(2*y/(r**2-1)) \
@@ -111,9 +111,9 @@ ADD_NOISE = False
 
 #! Save datasets
 def main():
-    bounds = [[-2.5,2.5],[-2.5,2.5],[.1,3],[.1,1.5]] # x,y,vort,R
+    bounds = [[-2.5,2.5],[-2.5,2.5],[.1,3],[.5,1.5]] # x,y,vort,R
 
-    if PLOT_FIELDS: plot_fields(N=300, bounds=bounds[:2], vort=1, R=1, add_noise=ADD_NOISE)
+    if PLOT_FIELDS: plot_fields(N=300, bounds=bounds[:2], vort=2, R=1, add_noise=ADD_NOISE)
 
     n_train = 1e3
     n_val = 5e3
