@@ -44,37 +44,42 @@ def streamfunction(x, y, vort, R=1):
 def u(x,y,vort,R=1):
     x, y = x/R, y/R
     r = np.sqrt(x**2 + y**2)
-    return R**2*(vort*y + vort/(2*np.pi)*(2*y**2/r**4+(1-1/r**2) + x/2*(1-1/r**4+4*y**2/r**6)*np.log((r**2-2*x+1)/(r**2+2*x+1)) \
+    u = vort*y + vort/(2*np.pi)*(2*y**2/r**4+(1-1/r**2) + x/2*(1-1/r**4+4*y**2/r**6)*np.log((r**2-2*x+1)/(r**2+2*x+1)) \
             + 4*x**2*y**2*(1-1/r**4)/((r**2-2*x+1)*(r**2+2*x+1))-(2*y*(x**2-y**2)/r**6+(1+1/r**4)*y)*np.arctan(2*y/(r**2-1)) \
-            + ((1+1/r**4)*(x**2-y**2)-2)*(x**2-y**2-1)/((r**2-1)**2+4*y**2)))
+            + ((1+1/r**4)*(x**2-y**2)-2)*(x**2-y**2-1)/((r**2-1)**2+4*y**2))
+    u *= R**2
+    return u
 
 def v(x,y,vort,R=1):
     x, y = x/R, y/R
     r = np.sqrt(x**2 + y**2)
-    return R**2*(-vort/(2*np.pi)*(2*x*y/r**4+y/2*(1-1/r**4+4*x**2/r**6)*np.log((r**2-2*x+1)/(r**2+2*x+1)) \
+    v = -vort/(2*np.pi)*(2*x*y/r**4+y/2*(1-1/r**4+4*x**2/r**6)*np.log((r**2-2*x+1)/(r**2+2*x+1)) \
             + 2*x*y*(x**2-y**2-1)*(1-1/r**4)/((r**2-2*x+1)*(r**2+2*x+1)) \
             - (2*x*(x**2-y**2)/r**6-(1+1/r**4)*x)*np.arctan(2*y/(r**2-1)) \
-            - 2*x*y*((1+1/r**4)*(x**2-y**2)-2)/((r**2-1)**2+4*y**2)))
+            - 2*x*y*((1+1/r**4)*(x**2-y**2)-2)/((r**2-1)**2+4*y**2))
+    v *= R**2
+    return v
 
-def fields(x, y, vort, R=1):
+def quantities(x, y, vort, R=1):
     # the velocity field is only defined in the upper plane; we make it anti-symmetric with respect to the x-axis
     if y<0: return -u(x,-y,vort,R), v(x,-y,vort,R), streamfunction(x,-y,vort,R)
     else: return u(x,y,vort,R), v(x,y,vort,R), streamfunction(x,y,vort,R)
 
-fields = np.vectorize(fields)
+quantities = np.vectorize(quantities)
 
 def plot_fields(N=200, bounds=[[5e-2, 1],[0, .05]], vort=3,  R=1, add_noise=False):
     x = np.linspace(*bounds[0], N)
     y = np.linspace(*bounds[1], N)
     xx,yy = np.meshgrid(x, y)
 
-    u,v,psi = fields(xx, yy, vort, R)
+    u,v,psi = quantities(xx, yy, vort, R)
     
     if add_noise: 
         for q in [u,v,psi]: q = add_noise(q)
 
     psi_min, psi_max = np.min(psi), np.max(psi)
     labels = ['$u$', '$v$', '$\psi$']
+    names = ['u', 'v', 'psi']
     for q in [u,v,psi]:
         mask = np.sqrt(xx**2 + yy**2) < R
         u[mask], v[mask] = np.nan, np.nan              
@@ -87,7 +92,7 @@ def plot_fields(N=200, bounds=[[5e-2, 1],[0, .05]], vort=3,  R=1, add_noise=Fals
         lim = psi_max**(1/a)
         levels = np.linspace(-lim, lim,30)**a
         ax.contour(xx, yy, psi, levels=levels, colors='black')
-
+        # plt.savefig(f'{names.pop(0)}_vort2_Rsqrt2.png', bbox_inches='tight', dpi=256)
         plt.show()
 
 def sample_points(N_points, bounds):
@@ -111,16 +116,19 @@ ADD_NOISE = False
 
 #! Save datasets
 def main():
-    bounds = [[-2.5,2.5],[-2.5,2.5],[.1,3],[.5,1.5]] # x,y,vort,R
+    # bounds = [[-2.5,2.5],[-2.5,2.5],[.1,3],[.5,1.5]] # x,y,vort,R
+    bounds = [[-2.5,2.5],[-2.5,2.5],[.1,3],[1,1]] # x,y,vort,R
 
-    if PLOT_FIELDS: plot_fields(N=300, bounds=bounds[:2], vort=2, R=1, add_noise=ADD_NOISE)
+    bounds = [[-2.5/np.sqrt(2),2.5/np.sqrt(2)],[-2.5/np.sqrt(2),2.5/np.sqrt(2)],[.1,3],[1,1]] # x,y,vort,R
+
+    if PLOT_FIELDS: plot_fields(N=300, bounds=bounds[:2], vort=2, R=1/np.sqrt(2), add_noise=ADD_NOISE)
 
     n_train = 1e3
     n_val = 5e3
     n_test = 1
     idx = 0
-    name = f'fraenkels_flow/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}'
-    save_datasets(sample_points, fields, name, bounds, N_train=int(n_train), N_val=int(n_val), N_test=int(n_test))
+    name = f'fraenkels-flow/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}_fixedR'
+    # save_datasets(sample_points, quantities, name, bounds, N_train=int(n_train), N_val=int(n_val), N_test=int(n_test))
 
 if __name__=='__main__':
     main()

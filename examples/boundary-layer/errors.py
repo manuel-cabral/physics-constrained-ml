@@ -9,8 +9,7 @@ from scipy.stats import median_abs_deviation
 import torch
 import os
 import glob
-import pickle
-plt.style.use('ggplot')
+from generate_data import quantities
 
 # delete if not needed
 ######
@@ -24,7 +23,8 @@ os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 ######
 
 import args
-from src.utils import get_args, set_seed, set_torch_dtype  #, set_torch_multiprocessing
+from src.utils import get_args, set_seed, set_torch_dtype, load_data, ftype_torch #, set_torch_multiprocessing
+from src.plotter import plot_quantity
 from src.model import Model
 import src.config
 
@@ -38,46 +38,6 @@ set_torch_dtype(args.ftype)
 # Set seed for reproducibility
 set_seed(args.seed)
 
-#! Solving ODE
-def blasius_eq(f,z):
-    return f[1], f[2], -f[0]*f[2]/2
-
-def find_c0(f2_0):
-    f = odeint(blasius_eq, (0,0,f2_0), [0, 10])
-    return 1.-f[-1, 1]
-
-f0_0, f1_0 = 0, 0
-f2_0 = fsolve(find_c0, .5)
-
-def solve_pointwise(z, density=250):
-    initial = f0_0, f1_0, f2_0
-    z_span = np.linspace(0,z,int(z*density))
-    f, f_z, f_zz = odeint(blasius_eq, initial, z_span).T
-    return f, f_z, f_zz, z_span
-
-def quantities(x, y, visc, U_inf):
-    pi1 = np.sqrt(U_inf * x / visc)
-    pi2 = y * np.sqrt(U_inf / (visc * x))
-
-    f, f_z,*_ = solve_pointwise(pi2, density=250)
-    f, f_z = f[-1] if len(f) else 0, f_z[-1] if len(f_z) else 0
-    u = U_inf * f_z     # u = U_inf * f'
-    v = U_inf/(2*pi1)*(pi2 * f_z - f)   # v = 1/(2*pi1) * (pi2 * f' - f)
-
-    psi = U_inf * y * f / pi2 if y!=0 else 0
-
-    return u, v, psi
-
-def load_pickle(path):
-    with open(f'{path}.pkl', 'rb') as f:
-        data = pickle.load(f)
-    return data
-
-def load_data(name=None, pasta='datasets'):
-    dir_path = os.path.dirname(os.path.abspath(__file__))
-    folder_path = os.path.join(dir_path, pasta)
-    dataset = load_pickle(os.path.join(folder_path,name))
-    return dataset
 
 def load_model(checkpoint, name, args, pasta='datasets', folder='best_models', initial_optm='lbfgs'):
     file_path = os.path.join(os.getcwd(), 'src', folder, f'{checkpoint}')
@@ -86,43 +46,32 @@ def load_model(checkpoint, name, args, pasta='datasets', folder='best_models', i
 
     return model
 
-# make quantities a vectorized function
-quantities = np.vectorize(quantities, otypes=[args.ftype, args.ftype, args.ftype])
-
-def change_parameters(args):
+def change_parameters(args, data_size=5e2):
     args.kind = 'incompressible'
-    args.layers = [3]*1
-    args.n_epochs = 700
-    args.n_epochs_adam = 500
+    args.layers = [3]*1 # [n_neurons]*n_layers
+    args.n_epochs = 2_000 # n_epochs_adam + n_epochs_lbfgs
+    args.n_epochs_adam = 1_000
     args.learning_rate_adam = 1e-2
     args.learning_rate_lbfgs = 1e-2
-    args.patience = None
-    args.batch_size = 256
-    args.scheduler = False  
+    args.patience = None 
+    args.batch_size = int(2**np.floor(np.log2(data_size)))
+    args.scheduler = True  
     args.norm_layer = True
     args.subtract_uniform_flow = True                         
     args.x_vars = ["x", "y", "visc", "U_infty"]
 
     args.normalize_inputs = False
-    args.reduce_inputs = not args.normalize_inputs
+    args.reduce_inputs = True
     args.transform_output = True
 
+    args.sampling_box = [(5e-2, 1), (0, 5e-2), (1/7e4,1/3e4), (0,5)]
+
+    args.phi = [[.5,0,-.5,.5],[-.5,1,-.5,.5]]
+
+    # args.phi_output = [0,1,0,1] # U_inf * y
+    args.phi_output = [.5,0,.5,.5] # sqrt(U_inf * visc * x)
+
     return
-
-def phi_base(D):
-    return null_space(D)
-
-def phi_base(D):
-    return null_space(D)
-def phi_zero(D):
-    phi = phi_base(D)
-
-    phi[:,-1] /= -phi[-1,-1]
-    
-    phi[:,0] += phi[-1,0]*phi[:,-1]
-    phi[:,1] += phi[-1,1]*phi[:,-1]
-
-    return phi
 
 def displacement_errors(model, Re=5e4, U_inf=1, chord=.9, N=1000):
     displacement_u = 1.7207874472823652
@@ -239,18 +188,6 @@ def errors(model, Re=5e4, U_inf=1, Nx=100, Ny=100):
 def main():
     change_parameters(args)
 
-    D = [[1,1,2,1, 2],[0,0,-1,-1, -1]] # x,y,visc,U_inf,psi
-    phi = phi_zero(D).T
-    *inputs, outputs = phi
-    args.phi = [input[:-1] for input in inputs]
-    args.phi_output = [0,1,0,1]
-
-    # checkpoint = 'incompressible_TAD95M_checkpoint_677'
-    # args.transform_output = False
-    # args.phi = [[.5,0,-.5,.5],[-.5,1,-.5,.5]]
-    # args.phi_output = [0,1,0,1]
-
-    # args.phi_output = [0,0,0,0]
 
     dir = os.path.join(os.getcwd(), 'src', 'best_models')
     outs = [[0,0,0,0],[0,1,0,1],[1,0,0,1],[0,0,1,0],[1,-1,1,0]]

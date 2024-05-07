@@ -52,7 +52,6 @@ def train_model(dataset, args):
 
 def change_parameters(args, data_size=5e2):
     args.kind = 'incompressible'
-    # args.kind = 'baseline'
     args.layers = [16]*4
     args.n_epochs = 2_000
     args.n_epochs_adam = 1_000
@@ -69,7 +68,7 @@ def change_parameters(args, data_size=5e2):
     args.reduce_inputs = True
     args.transform_output = True
 
-    # args.sampling_box = [[-2.5,2.5],[-2.5,2.5],[.1,3],[.1,1.5]] # x,y,vort,R
+    args.sampling_box = [[-2.5,2.5],[-2.5,2.5],[.1,3],[.1,1.5]] # x,y,vort,R
 
     args.phi = [[1,0,0,-1],[0,1,0,-1]]
 
@@ -85,7 +84,8 @@ def main():
     idx = 0
     change_parameters(args, data_size=n_train)
 
-    name = f'fraenkels_flow/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}'
+    # name = f'fraenkels-flow/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}'
+    name = f'fraenkels-flow/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}_fixedR'
     dataset = load_data(name)
 
     train_model(dataset, args)

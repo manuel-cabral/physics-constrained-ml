@@ -82,7 +82,6 @@ class NN(torch.nn.Module):
     def forward(self, X):
         return self.layers(X)
     
-
 class Model(object):
     """Create the model around the NN.
 
@@ -321,7 +320,7 @@ class Model(object):
         if next(self.nn.parameters()).device.type == "cuda":
             X = X.to("cuda")
 
-        return self.forward(X, kind=kind)
+        return self.forward(X)
     
     def transform_output(self, X):
         X = X.to(self.dtype)
