@@ -1,0 +1,33 @@
+# Trained models
+training/*
+
+# Full dataset
+**/dataset/RANS/*
+!**/dataset/RANS/airFoil2D_SST_31.577_2.75_2.604_4.088_17.312
+!**/dataset/RANS/airFoil2D_SST_33.816_-1.984_6.59_0.0_7.983
+
+# Local test stuff
+examples/test*
+
+# Dataset *.npy objects
+*.npy
+
+# Image dir
+imgs/
+
+# frames
+frames/
+
+# Compiled python modules.
+*.pyc
+
+# Setuptools distribution folder.
+dist/
+
+# Python egg metadata, regenerated from source files by setuptools.
+*.egg-info
+*.egg
+.eggs/
+
+# VSCode stuff
+.vscode
