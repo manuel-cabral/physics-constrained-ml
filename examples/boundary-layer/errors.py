@@ -48,14 +48,14 @@ def load_model(checkpoint, name, args, pasta='datasets', folder='best_models', i
 
 def change_parameters(args, data_size=5e2):
     args.kind = 'incompressible'
-    args.layers = [3]*1 # [n_neurons]*n_layers
+    args.layers = [6]*1 # [n_neurons]*n_layers
     args.n_epochs = 2_000 # n_epochs_adam + n_epochs_lbfgs
     args.n_epochs_adam = 1_000
     args.learning_rate_adam = 1e-2
     args.learning_rate_lbfgs = 1e-2
     args.patience = None 
     args.batch_size = int(2**np.floor(np.log2(data_size)))
-    args.scheduler = True  
+    args.scheduler = False  
     args.norm_layer = True
     args.subtract_uniform_flow = True                         
     args.x_vars = ["x", "y", "visc", "U_infty"]
@@ -68,8 +68,9 @@ def change_parameters(args, data_size=5e2):
 
     args.phi = [[.5,0,-.5,.5],[-.5,1,-.5,.5]]
 
-    # args.phi_output = [0,1,0,1] # U_inf * y
-    args.phi_output = [.5,0,.5,.5] # sqrt(U_inf * visc * x)
+    # args.phi_output = [0,0,0,0] # 1
+    # args.phi_output = [.5,0,.5,.5] # sqrt(U_inf * visc * x)
+    args.phi_output = [0,1,0,1] # U_inf * y
 
     return
 
@@ -222,7 +223,7 @@ def main():
 
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from mpl_toolkits.axes_grid1.inset_locator import InsetPosition
-def displacement_u(model, ax=None, axins=None, Re=5e4, U_inf=1, chord=.9, N=1000, label='u', color='firebrick', save=False):
+def displacement_u(model, ax=None, axins=None, Re=5e4, U_inf=1, chord=.9, N=1000, label='u', color='firebrick', plot_target=False, save=False):
     displacement_u = 1.7207874472823652
     displacement_v = 2.5370438217529157
     d_acc = np.zeros((2,), dtype=np.float32) # {u,v}
@@ -242,7 +243,7 @@ def displacement_u(model, ax=None, axins=None, Re=5e4, U_inf=1, chord=.9, N=1000
     u_exact, v_exact, _ = quantities(x, y, 1/Re*torch.ones_like(x), U_inf*torch.ones_like(x))  
     
     fig, ax = plt.subplots(figsize=(10, 10)) if ax==None else ax
-    if color=='firebrick':
+    if plot_target:
         ax.plot(u_exact, eta, 'k--', label='exact')
     ax.plot(u_, eta, c=color, label=label)
     ax.legend(loc='lower right', fontsize=16)
@@ -265,7 +266,7 @@ def displacement_u(model, ax=None, axins=None, Re=5e4, U_inf=1, chord=.9, N=1000
 
     return fig, ax, axins
 
-def displacement_v(model, ax=None, axins=None, Re=5e4, U_inf=1, chord=.9, N=1000, label='v', color='firebrick', save=False):
+def displacement_v(model, ax=None, axins=None, Re=5e4, U_inf=1, chord=.9, N=1000, label='v', color='firebrick', plot_target=False, save=False):
     displacement_u = 1.7207874472823652
     displacement_v = 2.5370438217529157
     d_acc = np.zeros((2,), dtype=np.float32) # {u,v}
@@ -303,7 +304,7 @@ def displacement_v(model, ax=None, axins=None, Re=5e4, U_inf=1, chord=.9, N=1000
     # plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
 
     fig, ax = plt.subplots(figsize=(10, 10)) if ax==None else ax
-    if color=='firebrick':
+    if plot_target:
         ax.plot(v_exact, eta, 'k--', label='exact')
     ax.plot(v_, eta, c=color, label=label)
     ax.legend(loc='lower right', fontsize=16)
@@ -328,54 +329,61 @@ def displacement_v(model, ax=None, axins=None, Re=5e4, U_inf=1, chord=.9, N=1000
 
 
 def main2():
-    change_parameters(args)
-
-    D = [[1,1,2,1, 2],[0,0,-1,-1, -1]] # x,y,visc,U_inf,psi
-    phi = phi_zero(D).T
-    *inputs, outputs = phi
-    args.phi = [input[:-1] for input in inputs]
-    # args.phi_output = [0,1,0,1]
-
-    # checkpoint = 'incompressible_TAD95M_checkpoint_677'
-    # args.transform_output = False
-    # args.phi = [[.5,0,-.5,.5],[-.5,1,-.5,.5]]
-    # args.phi_output = [0,1,0,1]
-
-    # args.phi_output = [0,0,0,0]
-
-    dir = os.path.join(os.getcwd(), 'src', 'best_models')
-    outs = [[0,0,0,0],[0,1,0,1],[1,0,0,1],[0,0,1,0],[1,-1,1,0]]
-    pis = 'pi1pi2'
-    # args.phi = [[.5,0,-.5,.5],[-.5,1,-.5,.5]]
-    # pis = 'pi2'
-    # args.phi = [[-.5,1,-.5,.5]]
+    n_train, n_val, n_test  = 5e2, 1e3, 1
+    idx = 0
     
-    U_inf = 2
     Re = 5e4
+    U_inf = 1
 
-    k = 1
-    args.phi_output = outs[k]
-    out = ''.join([str(i) for i in outs[k]])
-    idx = 9
-    checkpoints = glob.glob(f'{dir}/{args.kind}_BASIS_transform{out}_idx{idx}_*.tar')
-    checkpoint = checkpoints[0]
-    model_0101 = load_model(checkpoint, name='data_5e2_1e3_1_idx0', args=args, initial_optm='lbfgs')
-    fig, ax, axins = displacement_u(model_0101, Re=Re, U_inf=U_inf, label='Uy transformation', color='firebrick')
+    x_component = True
 
-    k = 0
-    args.phi_output = outs[k]
-    out = ''.join([str(i) for i in outs[k]])
-    idx = 9 
-    checkpoints = glob.glob(f'{dir}/{args.kind}_BASIS_transform{out}_idx{idx}_*.tar')
-    checkpoint = checkpoints[0]
-    model_0000 = load_model(checkpoint, name='data_5e2_1e3_1_idx0', args=args, initial_optm='lbfgs')
-    fig, ax, axins = displacement_u(model_0000, (fig,ax), axins, Re=Re, U_inf=U_inf, label='no transformation', color='forestgreen', save=True)
+    change_parameters(args, data_size=n_train)
+
+    data_file = f'boundary-layer/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}'
 
 
+    # checkpoint = 'incompressible_G2KLXA_checkpoint_1810' # [6]*1, out=[0,0,0,0]
+    # args.phi_output = [0,0,0,0] # 1
+    # model = load_model(f'{checkpoint}.tar', name=data_file, args=args, initial_optm='lbfgs')
+    # if x_component: 
+    #     fig, ax, axins = displacement_u(model, Re=Re, U_inf=U_inf, label='input physics', color='steelblue', plot_target=True, save=False)
+    # else:
+    #     fig, ax, axins = displacement_v(model, Re=Re, U_inf=U_inf, label='input physics', color='steelblue', plot_target=True, save=False)
+
+    checkpoint = 'incompressible_78DSCZ_checkpoint_1880' # [6]*1, out=[0,1,0,1]
+    args.phi_output = [0,1,0,1] # 1
+    model = load_model(f'{checkpoint}.tar', name=data_file, args=args, initial_optm='lbfgs')
+    if x_component: 
+        # fig, ax, axins = displacement_u(model, (fig,ax), axins, Re=Re, U_inf=U_inf, label='$U_{\infty} y$ transformation', color='firebrick', save=False)
+        fig, ax, axins = displacement_u(model, Re=Re, U_inf=U_inf, label='input-output physics', color='firebrick', plot_target=True, save=False)
+    else:
+        # fig, ax, axins = displacement_v(model, (fig,ax), axins, Re=Re, U_inf=U_inf, label='$U_{\infty} y$ transformation', color='firebrick', save=False)
+        fig, ax, axins = displacement_v(model, Re=Re, U_inf=U_inf, label='input-output physics', color='firebrick', plot_target=True, save=False)
+
+    # checkpoint = 'incompressible_KP4QVS_checkpoint_1602' # [6]*1, out=[.5,0,.5,.5]
+    # args.phi_output = [.5,0,.5,.5] # sqrt(U_inf * visc * x)
+    # model = load_model(f'{checkpoint}.tar', name=data_file, args=args, initial_optm='lbfgs')
+    # if x_component: 
+    #     fig, ax, axins = displacement_u(model, (fig,ax), axins,  Re=Re, U_inf=U_inf, label='$\sqrt{U_{\infty} \\nu x}$ transformation', color='steelblue', save=False)
+    # else:
+    #     fig, ax, axins = displacement_v(model, (fig,ax), axins,  Re=Re, U_inf=U_inf, label='$\sqrt{U_{\infty} \\nu x}$ transformation', color='steelblue', save=False)
+
+    # checkpoint = 'incompressible_HQQQNN_checkpoint_1686' # [6]*1, no-physics
+    checkpoint = 'baseline_S0R1IG_checkpoint_1958' # [6]*1, no-physics
+    args.kind = 'baseline'
+    args.normalize_inputs = True
+    args.reduce_inputs = False
+    args.transform_output = False
+    args.sampling_box = [(5e-2, 1), (0, 5e-2), (1/7e4,1/3e4), (0,5)]
+    model = load_model(f'{checkpoint}.tar', name=data_file, args=args, initial_optm='lbfgs')
+    if x_component: 
+        fig, ax, axins = displacement_u(model, (fig,ax), axins,  Re=Re, U_inf=U_inf, label='no physics', color='forestgreen', save=False)
+    else:
+        fig, ax, axins = displacement_v(model, (fig,ax), axins,  Re=Re, U_inf=U_inf, label='no physics', color='forestgreen', save=False)
+
+    plt.savefig('u_profile_comparison.png', bbox_inches='tight', dpi=256)
     plt.show()
-    
-    # ax, axins = displacement_v(model, Re=Re, U_inf=U_inf)
-    # plt.show()
+
 
 
 

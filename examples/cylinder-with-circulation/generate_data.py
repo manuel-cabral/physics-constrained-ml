@@ -89,28 +89,39 @@ def plot_fields(N=200, bounds=[[-3,3],[-3,3]], circulation=0, U_inf=1, R=1, add_
 
     labels = ['$u$', '$v$', '$\Tilde{\psi}$']
     for q in [u,v,psi-U_inf*yy]:
-        q = np.ma.masked_array(q, mask)
-        fig, ax = plot_quantity(q, x, y, label=labels.pop(0))
+        q_ = np.ma.masked_array(q, mask)
+        fig, ax = plot_quantity(q_, x, y, label=labels.pop(0))
         circle = plt.Circle((0,0), R, color='firebrick', fill=True, alpha=.3)
         ax.add_artist(circle)
+        # if q is u: 
+        #     plt.savefig('cyl_u_teo.png', bbox_inches='tight', dpi=256)
+        # elif q is v: 
+        #     plt.savefig('cyl_v_teo.png', bbox_inches='tight', dpi=256)
+        # else:
+        #     plt.savefig('cyl_psi_tilde_teo.png', bbox_inches='tight', dpi=256)
         plt.show()
 
 #! FLAGS
 PLOT_FIELDS = True
 ADD_NOISE = False
+SAVE_DATA = True
+
 
 #! Save datasets
 def main():
     bounds = [[-3,3],[-3,3],[-5,5],[.5,5],[.1,3]] # x,y,c,U,r
 
-    if PLOT_FIELDS: plot_fields(N=300, bounds=bounds[:2], circulation=1, U_inf=1, R=1, add_noise=ADD_NOISE)
+    if PLOT_FIELDS: plot_fields(N=500, bounds=bounds[:2], circulation=4*np.pi, U_inf=1, R=1, add_noise=ADD_NOISE)
 
     n_train = 5e2
     n_val = 1e3
     n_test = 1
     idx = 0
     name = f'cylinder-with-circulation/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}'
-    save_datasets(sample_points, quantities, name, bounds, N_train=int(n_train), N_val=int(n_val), N_test=int(n_test))
+
+    if SAVE_DATA:
+        save_datasets(sample_points, quantities, name, bounds, N_train=int(n_train), N_val=int(n_val), N_test=int(n_test))
+    
     return
 
 if __name__=='__main__':

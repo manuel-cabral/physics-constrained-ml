@@ -15,6 +15,7 @@ class NORMALIZE(torch.nn.Module):
     def forward(self, input):
         offset_m = torch.zeros_like(input)
         range_m = torch.zeros_like(input)
+        # print(input)
         for i, (min_val, max_val) in enumerate(self.args.sampling_box):
             if self.args.kind=='incompressible':
                 offset_m[i] = torch.full_like(offset_m[0], min_val)
@@ -41,7 +42,7 @@ class TRANSFORM_INPUT(torch.nn.Module):
                 for j,k in enumerate(l):
                     new_vars[:,i] *= torch.pow(input[:,j],k)
         return new_vars
-    
+
 class NN(torch.nn.Module):
     """Create a feed-forward neural network, based on the provided arguments.
 
@@ -166,7 +167,8 @@ class Model(object):
             predictions = self.curl(X) if self.args.kind=='incompressible' else self.nn(X)
 
             if self.args.subtract_uniform_flow: 
-                predictions[:,0] += X[:,3] # assumes fourth variable of the input is the background uniform flow
+                # predictions[:,0] += X[:,3] # assumes fourth variable of the input is the background uniform flow
+                predictions[:,0] += X[:,1]*X[:,2] # vort*y
 
             return predictions
 
@@ -218,7 +220,7 @@ class Model(object):
                         uv = uv.cuda(non_blocking=self.args.pin_memory)
                     
                     X = X.to(self.dtype)
-                    uv_nn = self.forward(X)
+                    uv_nn = self.forward(X) 
 
                     loss = self.loss(uv_nn, uv, X)
                     error = self.error(uv_nn, uv)
@@ -325,9 +327,10 @@ class Model(object):
     def transform_output(self, X):
         X = X.to(self.dtype)
         out = self.nn(X)
+
         if self.args.transform_output:
-            for i,exp in enumerate(self.args.phi_output):
-                out *= torch.prod(X[i]**exp)
+            for i, exp in enumerate(self.args.phi_output):
+                out *= torch.pow(X[i],exp)
         return out
     
     def psi(self, X):
@@ -375,7 +378,8 @@ class Model(object):
                 respect to the input. The resulting tensor has shape (batch_size,).
         """
         # H = vmap(hessian(self.nn))(X) # H.shape = (batch_size, len(Y), len(X), len(X))
-        H = hessian(self.transform_output)(X) # H.shape = (batch_size, len(Y), len(X), len(X))
+        # H = hessian(self.transform_output)(X) # H.shape = (batch_size, len(Y), len(X), len(X))
+        H = vmap(hessian(self.transform_output))(X) # H.shape = (batch_size, len(Y), len(X), len(X))
         H = torch.squeeze(H) # single output
         return H[..., 0, 0] + H[..., 1, 1] # vort = laplacian(psi)
     

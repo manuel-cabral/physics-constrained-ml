@@ -33,7 +33,6 @@ set_seed(args.seed)
 
 #! Get fields
 def streamfunction(x, y, vort, R=1):
-    # y = np.abs(y)
     x, y = x/R, y/R
     r = np.sqrt(x**2 + y**2)
     psi = vort*y**2/2 + vort/(2*np.pi)*((1-1/r**2)*y + (x*y*(r**4-1))/(2*r**4)*np.log((r**2-2*x+1)/(r**2+2*x+1)) \
@@ -47,7 +46,7 @@ def u(x,y,vort,R=1):
     u = vort*y + vort/(2*np.pi)*(2*y**2/r**4+(1-1/r**2) + x/2*(1-1/r**4+4*y**2/r**6)*np.log((r**2-2*x+1)/(r**2+2*x+1)) \
             + 4*x**2*y**2*(1-1/r**4)/((r**2-2*x+1)*(r**2+2*x+1))-(2*y*(x**2-y**2)/r**6+(1+1/r**4)*y)*np.arctan(2*y/(r**2-1)) \
             + ((1+1/r**4)*(x**2-y**2)-2)*(x**2-y**2-1)/((r**2-1)**2+4*y**2))
-    u *= R**2
+    u *= R
     return u
 
 def v(x,y,vort,R=1):
@@ -57,7 +56,7 @@ def v(x,y,vort,R=1):
             + 2*x*y*(x**2-y**2-1)*(1-1/r**4)/((r**2-2*x+1)*(r**2+2*x+1)) \
             - (2*x*(x**2-y**2)/r**6-(1+1/r**4)*x)*np.arctan(2*y/(r**2-1)) \
             - 2*x*y*((1+1/r**4)*(x**2-y**2)-2)/((r**2-1)**2+4*y**2))
-    v *= R**2
+    v *= R
     return v
 
 def quantities(x, y, vort, R=1):
@@ -111,24 +110,45 @@ def sample_points(N_points, bounds):
     return points
 
 #! FLAGS
-PLOT_FIELDS = True
+PLOT_FIELDS = False
 ADD_NOISE = False
 
 #! Save datasets
 def main():
-    # bounds = [[-2.5,2.5],[-2.5,2.5],[.1,3],[.5,1.5]] # x,y,vort,R
-    bounds = [[-2.5,2.5],[-2.5,2.5],[.1,3],[1,1]] # x,y,vort,R
+    bounds = [[-2.5,2.5],[-2.5,2.5],[.1,3],[.5,1.5]] # x,y,vort,R
+    
+    # bounds = [[-2.5,2.5],[0,2.5],[.1,3],[.5,1.5]] # x,y,vort,R
 
-    bounds = [[-2.5/np.sqrt(2),2.5/np.sqrt(2)],[-2.5/np.sqrt(2),2.5/np.sqrt(2)],[.1,3],[1,1]] # x,y,vort,R
+    # bounds = [[-2.5,2.5],[-2.5,2.5],[.1,3],[.25,0.75]] # x,y,vort,R
 
-    if PLOT_FIELDS: plot_fields(N=300, bounds=bounds[:2], vort=2, R=1/np.sqrt(2), add_noise=ADD_NOISE)
+    # scaled = False
+    # R = 1.5
+    # if scaled:
+    #     bounds = [[-2.5*R,2.5*R],[-2.5*R,2.5*R],[.1,3],[R,R]] # x,y,vort,R
+    # else:
+    #     bounds = [[-2.5,2.5],[-2.5,2.5],[.1,3],[R,R]] # x,y,vort,R
+    
+    # vort = 2
+    # bounds = [[-2.5,2.5],[-2.5,2.5],[vort,vort],[.5,1.5]] # x,y,vort,R
+
+    # bounds = [[-2.5/np.sqrt(2),2.5/np.sqrt(2)],[-2.5/np.sqrt(2),2.5/np.sqrt(2)],[.1,3],[1,1]] # x,y,vort,R
+
+    if PLOT_FIELDS: 
+        vort = 2
+        R = 1/np.sqrt(2)
+        # vort = 2
+        # R = 1
+
+        plot_fields(N=300, bounds=bounds[:2], vort=vort, R=R, add_noise=ADD_NOISE)
 
     n_train = 1e3
     n_val = 5e3
     n_test = 1
     idx = 0
-    name = f'fraenkels-flow/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}_fixedR'
-    # save_datasets(sample_points, quantities, name, bounds, N_train=int(n_train), N_val=int(n_val), N_test=int(n_test))
+    
+    name = f'fraenkels-flow/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}'
+
+    save_datasets(sample_points, quantities, name, bounds, N_train=int(n_train), N_val=int(n_val), N_test=int(n_test))
 
 if __name__=='__main__':
     main()

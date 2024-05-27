@@ -85,8 +85,11 @@ def plot_fields(model, N=200, bounds=[[-3,3],[-3,3]], circulation=0, U_inf=1, R=
     u_teo[mask], v_teo[mask], psi_teo[mask] = [np.nan]*3
     u[mask], v[mask], psi[mask] = [np.nan]*3
 
-    print(f'Error u: {100*np.nanmean(np.linalg.norm(u-u_teo, axis=0)/np.linalg.norm(u_teo, axis=0)):.2f}%')
-    print(f'Error v: {100*np.nanmean(np.linalg.norm(v-v_teo, axis=0)/np.linalg.norm(v_teo, axis=0)):.2f}%')
+    err_u = 100*np.nanmean(np.linalg.norm(u-u_teo, axis=0)/np.linalg.norm(u_teo, axis=0))
+    err_v = 100*np.nanmean(np.linalg.norm(v-v_teo, axis=0)/np.linalg.norm(v_teo, axis=0))
+
+    print(f'Error u: {err_u:.2f}%')
+    print(f'Error v: {err_v:.2f}%')
     # print(f'Error psi: {100*np.linalg.norm(psi-psi_teo)/np.linalg.norm(psi_teo-U_inf*yy):.2f}%')
 
     if add_noise: 
@@ -97,6 +100,12 @@ def plot_fields(model, N=200, bounds=[[-3,3],[-3,3]], circulation=0, U_inf=1, R=
         fig, ax = plot_quantity(q, x, y, label=labels.pop(0))
         circle = plt.Circle((0,0), R, color='firebrick', fill=True, alpha=.3)
         ax.add_artist(circle)
+        if q is u: 
+            ax.text(0.7, 0.07, f'Relative error: {err_u:.2f}\%', transform=ax.transAxes)
+            plt.savefig('cyl_u_model.png', bbox_inches='tight', dpi=256)
+        elif q is v: 
+            ax.text(0.7, 0.07, f'Relative error: {err_v:.2f}\%', transform=ax.transAxes)
+            plt.savefig('cyl_v_model.png', bbox_inches='tight', dpi=256)
         plt.show()
 
 def main():
@@ -109,7 +118,6 @@ def main():
 
     # checkpoint = 'incompressible_9TK2AT_checkpoint_1601' # [6]*1, out=[0,0,0,0,0]
     checkpoint = 'incompressible_K18GGI_checkpoint_1519' # [6]*1, out=[0,0,0,1,1]
-
     model = load_model(f'{checkpoint}.tar', name=data_file, args=args, initial_optm='lbfgs')
 
     bounds = [[-3,3],[-3,3],[-5,5],[.5,5],[.1,3]] # x,y,c,U,r

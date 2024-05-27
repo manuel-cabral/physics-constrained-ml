@@ -49,7 +49,7 @@ def train_model(dataset, args):
 
 def change_parameters(args, data_size=5e2):
     args.kind = 'incompressible'
-    args.layers = [6]*1 # [n_neurons]*n_layers
+    args.layers = [16]*2 # [n_neurons]*n_layers
     args.n_epochs = 2_000 # n_epochs_adam + n_epochs_lbfgs
     args.n_epochs_adam = 1_000
     args.learning_rate_adam = 1e-2
@@ -64,6 +64,10 @@ def change_parameters(args, data_size=5e2):
     args.normalize_inputs = False
     args.reduce_inputs = True
     args.transform_output = True
+
+    # args.normalize_inputs = True
+    # args.reduce_inputs = False
+    # args.transform_output = False
 
     args.sampling_box = [[-3,3],[-3,3],[-5,5],[.5,5],[.1,3]] # x,y,c,U,r
 
@@ -85,6 +89,7 @@ def main():
     dataset = load_data(name)
     train_model(dataset, args)
 
+    # baseline_8KCAEL_checkpoint_1682 # 5e2, [6]*1, 1e-2, 2K epochs, 1K Adam, 1K L-BFGS, 1e-2 lr
 
 if __name__ == '__main__':
     main()

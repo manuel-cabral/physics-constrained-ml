@@ -83,8 +83,12 @@ def plot_fields(model, N=200, bounds=[[5e-2, 1],[0, .05]], Re=5e4, U_inf=1, add_
     psi = model.psi(points).detach().numpy().reshape(N,N)
 
     u_teo,v_teo,psi_teo = quantities(xx, yy, 1/Re, U_inf[0])
-    print(f'Error u: {100*np.linalg.norm(u-u_teo)/np.linalg.norm(u_teo):.2f}%')
-    print(f'Error v: {100*np.linalg.norm(v-v_teo)/np.linalg.norm(v_teo):.2f}%')
+
+    err_u = 100*np.nanmean(np.linalg.norm(u-u_teo, axis=0)/np.linalg.norm(u_teo, axis=0))
+    err_v = 100*np.nanmean(np.linalg.norm(v-v_teo, axis=0)/np.linalg.norm(v_teo, axis=0))
+
+    print(f'Error u: {err_u:.2f}%')
+    print(f'Error v: {err_v:.2f}%')
     # print(f'Error psi: {100*np.linalg.norm(psi-psi_teo)/np.linalg.norm(psi_teo-U_inf*yy):.2f}%')
 
     if add_noise: 
@@ -94,7 +98,53 @@ def plot_fields(model, N=200, bounds=[[5e-2, 1],[0, .05]], Re=5e4, U_inf=1, add_
     for q in [u,v,psi-U_inf*yy]:
         fig, ax = plot_quantity(q, x, y, label=labels.pop(0))
         ax.plot(x, bl_thickness(x, visc[0], U_inf[0]), 'k--', label='BL thickness')
+        # if q is u: 
+        #     ax.text(0.7, 0.07, f'Relative error: {err_u:.2f}\%', transform=ax.transAxes)
+        #     plt.savefig('fp_u_model.png', bbox_inches='tight', dpi=256)
+        # elif q is v: 
+        #     ax.text(0.7, 0.07, f'Relative error: {err_v:.2f}\%', transform=ax.transAxes)
+        #     plt.savefig('fp_v_model.png', bbox_inches='tight', dpi=256)
         plt.show()
+
+def get_quantities(model, N=200, bounds=[[5e-2, 1],[0, .05]], Re=5e4, U_inf=1):
+    x = np.repeat(.95, N)
+    y = np.linspace(*bounds[1], N)
+
+    visc = np.ones_like(x)*1/Re
+    U_inf = np.ones_like(y)*U_inf
+
+    points = np.column_stack((x,y,visc,U_inf))   
+    points = torch.from_numpy(points).to(torch.float32)
+    u,v = (model.predict(points)).detach().numpy().T
+
+    u /= U_inf[0]
+    v /= U_inf[0]
+
+    mask_u = u<.95
+    disp_thick = np.trapz((1-u[mask_u]), y[mask_u])
+    mom_thick = np.trapz((1-u[mask_u])*u[mask_u], y[mask_u])
+    print(f"Displacement thickness: {disp_thick:.2f}")
+    print(f"Momentum thickness: {mom_thick:.2f}")
+
+    mask_v = v<.95
+    disp_thick_v = np.trapz((1-v[mask_v]), y[mask_v])
+    mom_thick_v = np.trapz((1-v[mask_v])*v[mask_v], y[mask_v])
+    print(f"Displacement thickness: {disp_thick_v:.2f}")
+    print(f"Momentum thickness: {mom_thick_v:.2f}")
+
+    plt.plot(u[mask_u], y[mask_u], color='firebrick', label="$u_{norm}$")
+    plt.plot(v[mask_v], y[mask_v], color='steelblue', label="$v_{norm}$")
+    # plt.vlines(1,0,1, color='k', ls='--', zorder=1, alpha=.5)
+    plt.fill_between(u[mask_u], y[mask_u], color='firebrick', alpha=0.2)
+    plt.fill_between(v[mask_v], y[mask_v], color='steelblue', alpha=0.2)
+    # plt.vlines(.95,0,1, color='gray', ls='-', zorder=1, alpha=.5)
+    plt.ylabel('$y$')
+    plt.legend()
+    plt.show()
+
+
+    return
+
 
 def main():
     n_train, n_val, n_test  = 5e2, 1e3, 1
@@ -115,7 +165,8 @@ def main():
 
     bounds = [[5e-2, 1],[0, 5e-2],[1/7e4, 1/3e4],[0,5]] # x,y,visc,U_inf
 
-    plot_fields(model, N=250, bounds=bounds[:2], Re=5e4, U_inf=1, add_noise=False)
+    # plot_fields(model, N=250, bounds=bounds[:2], Re=5e4, U_inf=1, add_noise=False)
+    get_quantities(model, N=250, bounds=bounds[:2], Re=5e4, U_inf=1)
 
 if __name__ == '__main__':
     main()

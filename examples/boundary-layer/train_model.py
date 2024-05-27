@@ -44,7 +44,8 @@ def train_model(dataset, args):
     print(f'Training time: {timedelta(seconds=end-start)}')
 
 def change_parameters(args, data_size=5e2):
-    args.kind = 'incompressible'
+    # args.kind = 'incompressible'
+    args.kind = 'baseline'
     args.layers = [6]*1 # [n_neurons]*n_layers
     args.n_epochs = 2_000 # n_epochs_adam + n_epochs_lbfgs
     args.n_epochs_adam = 1_000
@@ -57,9 +58,13 @@ def change_parameters(args, data_size=5e2):
     args.subtract_uniform_flow = True                         
     args.x_vars = ["x", "y", "visc", "U_infty"]
 
-    args.normalize_inputs = False
-    args.reduce_inputs = True
-    args.transform_output = True
+    # args.normalize_inputs = False
+    # args.reduce_inputs = True
+    # args.transform_output = True
+
+    args.normalize_inputs = True
+    args.reduce_inputs = False
+    args.transform_output = False
 
     args.sampling_box = [(5e-2, 1), (0, 5e-2), (1/7e4,1/3e4), (0,5)]
 

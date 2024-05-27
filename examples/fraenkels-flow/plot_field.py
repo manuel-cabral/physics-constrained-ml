@@ -38,7 +38,7 @@ def load_model(checkpoint, name, args, pasta='datasets', folder='best_models', i
 
 def change_parameters(args, data_size=5e2):
     args.kind = 'incompressible'
-    args.layers = [16]*4 # [n_neurons]*n_layers
+    args.layers = [16]*2 # [n_neurons]*n_layers
     args.n_epochs = 2_000 # n_epochs_adam + n_epochs_lbfgs
     args.n_epochs_adam = 1_000
     args.learning_rate_adam = 1e-2
@@ -47,14 +47,14 @@ def change_parameters(args, data_size=5e2):
     args.batch_size = int(2**np.floor(np.log2(data_size)))
     args.scheduler = False  
     args.norm_layer = True
-    args.subtract_uniform_flow = True                         
+    args.subtract_uniform_flow = False                         
     args.x_vars = ["x", "y", "vort", "r"]
 
     args.normalize_inputs = False
     args.reduce_inputs = True
     args.transform_output = True
 
-    args.sampling_box = [[-2.5,2.5],[-2.5,2.5],[.1,3],[.1,1.5]] # x,y,vort,R
+    args.sampling_box = [[-2.5,2.5],[-2.5,2.5],[.1,3],[.5,1.5]] # x,y,vort,R
 
     args.phi = [[1,0,0,-1],[0,1,0,-1]]
 
@@ -76,6 +76,9 @@ def plot_fields(model, N=200, bounds=[[-3,3],[-3,3]], vort=1, R=1, add_noise=Fal
     u,v = u.reshape(N,N), v.reshape(N,N)
     psi = model.psi(points).detach().numpy().reshape(N,N)
 
+    # u,v = u/.5, v/.5
+    # u,v = u/1.5, v/1.5
+
     u_teo, v_teo, psi_teo = quantities(xx, yy, vort, R,)
 
     mask = xx**2 + yy**2 <= R**2
@@ -89,14 +92,49 @@ def plot_fields(model, N=200, bounds=[[-3,3],[-3,3]], vort=1, R=1, add_noise=Fal
     if add_noise: 
         for q in [u,v,psi]: q = add_noise(q)
 
-    labels = ['$u$', '$u_{target}$', '$v$', '$v_{target}$', '$\psi$']
-    names = ['u', 'u_teo', 'v', 'v_teo', 'psi']
-    for q in [u, u_teo, v, v_teo, psi]:
+    # labels = ['$|u_{target}-u|$', '$|v_{target}-v|$', '$|\psi_{target}-\psi|$']
+    # names = ['u_error', 'v_error', 'psi_error']
+    # for q in [u_teo-u, v_teo-v, psi_teo-psi]:
+
+    labels = ['$u$', '$u_{target}$', '$|u_{target}-u|$', '$v$', '$v_{target}$', '$|v_{target}-v|$', '$\psi$', '$\psi_{target}$', '$|\psi_{target}-\psi|$']
+    names = ['u', 'u_target', 'u_error', 'v', 'v_target', 'v_error', 'psi', 'psi_target', 'psi_error']
+    for q in [u, u_teo, u_teo-u, v, v_teo, v_teo-v, psi, psi_teo, psi_teo-psi]:
+    # labels = ['$u$', '$u_{target}$']
+    # names = ['u', 'u_target']
+    # for q in [u, u_teo]:
         fig, ax = plot_quantity(q, x, y, label=labels.pop(0))
         circle = plt.Circle((0,0), R, color='firebrick', fill=True, alpha=.3)
         ax.add_artist(circle)
-        plt.savefig(f'{names.pop(0)}_vort2_R1.png', bbox_inches='tight', dpi=256)
+        # plt.savefig(f'{names.pop(0)}.png', bbox_inches='tight', dpi=256)
         plt.show()
+
+    # curl = model.curl(points).detach().numpy()
+    # u1, v1 = curl.T
+    # # curl = curl.reshape(N,N)
+    # curl_check = model.curl_check(points)
+    # u2, v2 = curl_check
+    # # curl_check = curl_check.reshape(N,N)
+
+
+    # fig, ax = plot_quantity(np.sqrt(u1**2+v1**2).reshape(N,N), x, y, label='Curl')
+    # circle = plt.Circle((0,0), R, color='firebrick', fill=True, alpha=.3)
+    # ax.add_artist(circle)
+    # plt.show()
+
+    # fig, ax = plot_quantity(np.sqrt(u2**2+v2**2).reshape(N,N), x, y, label='Curl check')
+    # circle = plt.Circle((0,0), R, color='firebrick', fill=True, alpha=.3)
+    # ax.add_artist(circle)
+    # plt.show()
+
+
+    # div = model.divergence(points).detach().numpy()
+    # div = div.reshape(N,N)
+
+    # fig, ax = plot_quantity(div, x, y, label='Curl')
+    # circle = plt.Circle((0,0), R, color='firebrick', fill=True, alpha=.3)
+    # ax.add_artist(circle)
+    # plt.show()
+
 
 def main():
     n_train, n_val, n_test  = 1e3, 5e3, 1
@@ -104,17 +142,34 @@ def main():
     
     change_parameters(args, data_size=n_train)
 
-    data_file = f'fraenkels-flow/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}'
     # data_file = f'fraenkels-flow/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}_fixedR'
-
     # checkpoint = 'incompressible_TEJGWL_checkpoint_1865' # [16]*4, out=[0,0,1,2], fixed radius
-    checkpoint = 'incompressible_QM1QO1_checkpoint_310' # [16]*4, out=[0,0,1,2]
 
-    model = load_model(f'{checkpoint}.tar', name=data_file, args=args, initial_optm='lbfgs')
+    # data_file = f'fraenkels-flow/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}'
+    # checkpoint = 'incompressible_QM1QO1_checkpoint_310' # [16]*4, out=[0,0,1,2]
 
-    bounds = [[-2.5,2.5],[-2.5,2.5],[.1,3],[.1,1.5]] # x,y,vort,R
+    name = f'fraenkels-flow/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}' 
+    checkpoint = 'incompressible_RTM8FJ_checkpoint_1824'
 
-    plot_fields(model, N=500, bounds=bounds[:2], vort=2, R=1, add_noise=False)
+    name = f'fraenkels-flow/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}_fixedR_p5' 
+    checkpoint = 'incompressible_IHP15A_checkpoint_1983'
+    # name = f'fraenkels-flow/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}_fixedR_1' 
+    # checkpoint = 'incompressible_0T8O35_checkpoint_1998'
+    # name = f'fraenkels-flow/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}_fixedR_1p5' 
+    # checkpoint = 'incompressible_A6E417_checkpoint_1968'
+
+    name = 'test' 
+    checkpoint = 'incompressible_GN7IGU_checkpoint_1937'
+
+    model = load_model(f'{checkpoint}.tar', name=name, args=args, initial_optm='lbfgs')
+
+    bounds = [[-2.5,2.5],[-2.5,2.5],[.1,3],[.5,1.5]] # x,y,vort,R
+    # bounds = [[-1.25,1.25],[-1.25,1.25],[.1,3],[.5,1.5]] # x,y,vort,R
+
+    vort = 1
+    R = .5
+
+    plot_fields(model, N=500, bounds=bounds[:2], vort=vort, R=R, add_noise=False)
 
 if __name__ == '__main__':
     main()

@@ -64,18 +64,21 @@ def plot_dataset_points(dataset, i=None, fname=None):
         plt.show()
     return
 
-def plot_quantity(q, x=None, y=None, label=None,fname=None):
-    fig, ax = plt.subplots(figsize=(11,9))
+import matplotlib.patheffects as pe
+def plot_quantity(q, x=None, y=None, label=None,fname=None, ax=None):
+    fig, ax = plt.subplots(figsize=(11,9)) if ax is None else (None, ax)
     im = ax.imshow(q, origin='lower', extent=(x.min(), x.max(), y.min(), y.max()), cmap='RdBu')
+    # im = ax.contourf(q, origin='lower', levels=30, extent=(x.min(), x.max(), y.min(), y.max()), cmap='RdBu')
     aspect = np.abs((x.max()-x.min())/(y.max()-y.min()))
     ax.set_aspect(aspect)
     ax.set_xlabel('$x$')
     ax.set_ylabel('$y$')
-    cbar = plt.colorbar(im)
+    cbar = plt.colorbar(im, fraction=0.046, pad=0.04)
     cbar.formatter.set_powerlimits((0, 0))
+    # im.set_clim(0, 2.5)
     if label is not None:
         x0, y0 = (x.max()-x.min())*.9+x.min(),(y.max()-y.min())*.9+y.min()
-        ax.text(x0, y0,label,fontsize=30, ha='center', va='center', color='white')#, path_effects=[pe.withStroke(linewidth=2, foreground="black")])
+        ax.text(x0, y0,label,fontsize=30, ha='center', va='center', color='white', path_effects=[pe.withStroke(linewidth=.8, foreground="black")])
     if fname is not None:
         plt.savefig(fname, bbox_inches='tight', dpi=256)
     return fig, ax
