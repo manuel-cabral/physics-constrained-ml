@@ -93,12 +93,6 @@ def plot_fields(N=200, bounds=[[5e-2, 1],[0, .05]], Re=5e4, U_inf=1, add_noise=F
     for q in [u,v,psi-U_inf*yy]:
         fig, ax = plot_quantity(q, x, y, label=labels.pop(0))
         ax.plot(x, bl_thickness(x, visc, U_inf), 'k--', label='BL thickness')
-        if q is u: 
-            plt.savefig('fp_u_teo.png', bbox_inches='tight', dpi=256)
-        elif q is v: 
-            plt.savefig('fp_v_teo.png', bbox_inches='tight', dpi=256)
-        else:
-            plt.savefig('fp_psi_teo.png', bbox_inches='tight', dpi=256)
         plt.show()
 
 def plot_profile(f_z, v_norm, z_span, z_max=10, capped=True, fname=None):
@@ -112,6 +106,7 @@ def plot_profile(f_z, v_norm, z_span, z_max=10, capped=True, fname=None):
         ax.fill_between(u_norm[mask], z_span[mask], color='firebrick', alpha=0.2)
         disp_thick = np.trapz((1-u_norm[mask]), z_span[mask])
         mom_thick = np.trapz((1-u_norm[mask])*u_norm[mask], z_span[mask])
+        print(f"\nu component:")
         print(f"Displacement thickness: {disp_thick:.2f}")
         print(f"Momentum thickness: {mom_thick:.2f}")
         mask = v_norm<.95
@@ -119,11 +114,9 @@ def plot_profile(f_z, v_norm, z_span, z_max=10, capped=True, fname=None):
         ax.vlines(.95,0,z_max, color='gray', ls='-', zorder=1, alpha=.5)
         disp_thick_v = np.trapz((1-v_norm[mask]), z_span[mask])
         mom_thick_v = np.trapz((1-v_norm[mask])*v_norm[mask], z_span[mask])
+        print(f"\nv component:")
         print(f"Displacement thickness: {disp_thick_v:.2f}")
         print(f"Momentum thickness: {mom_thick_v:.2f}")
-
-    # ax.fill_between(u_norm, z_span, color='firebrick', alpha=0.2)
-    # ax.fill_between(v_norm, z_span, color='steelblue', alpha=0.2)
     ax.set_ylabel('$\eta$')
     ax.legend()
     if fname: plt.savefig(fname, bbox_inches='tight', dpi=256)
@@ -140,7 +133,7 @@ def main():
     bounds = [[5e-2, 1],[0, 5e-2],[1/7e4, 1/3e4],[0,5]] # x,y,visc,U_inf
 
     if PLOT_FIELDS: plot_fields(N=250, bounds=bounds[:2], Re=5e4, U_inf=1, add_noise=ADD_NOISE)
-    if PLOT_PROFILE: plot_profile(f_z, v_norm, z_span, z_max=10, fname='fp_profile_teo_placeholder.png')
+    if PLOT_PROFILE: plot_profile(f_z, v_norm, z_span, z_max=10, fname=None)
 
     n_train, n_val, n_test  = 5e2, 1e3, 1
     idx = 0
@@ -148,7 +141,7 @@ def main():
     
     if SAVE_DATA:
         save_datasets(sample_points, quantities, name, bounds, folder='datasets/boundary-layer/', N_train=int(n_train), N_val=int(n_val), N_test=int(n_test))
-    
+
     return
     
 if __name__=='__main__':

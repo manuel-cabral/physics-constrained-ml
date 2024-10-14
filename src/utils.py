@@ -123,6 +123,7 @@ def save_to_pickle(folder, fname, data):
 
 def save_datasets(sample_points, quantities, name, bounds, folder='datasets', N_train=int(5e2), N_val=int(1e3), N_test=1):
     dir_path = os.path.dirname(os.path.abspath(__file__))
+    dir_path = '/'.join(dir_path.split('/')[:-1])
     folder_path = os.path.join(dir_path, folder)
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
@@ -137,6 +138,7 @@ def save_datasets(sample_points, quantities, name, bounds, folder='datasets', N_
     dataset['train'], dataset['val'], dataset['test'] = complete[:N_train], complete[N_train:N_train+N_val], complete[N_train+N_val:]
 
     save_to_pickle(folder_path, name, dataset)
+    print(f"\nDataset saved in {folder[:-1]}/{name}.pkl")
     return
 
 def load_pickle(path):
@@ -146,6 +148,7 @@ def load_pickle(path):
 
 def load_data(name, folder='datasets'):
     dir_path = os.path.dirname(os.path.abspath(__file__))
+    dir_path = '/'.join(dir_path.split('/')[:-1])
     folder_path = os.path.join(dir_path, folder)
     dataset = load_pickle(os.path.join(folder_path,name))
     return dataset
