@@ -59,7 +59,6 @@ def change_parameters(args, data_size=5e2):
 
     args.phi = [[.5,0,-.5,.5],[-.5,1,-.5,.5]]
 
-    # args.phi_output = [0,0,0,0] # 1
     # args.phi_output = [.5,0,.5,.5] # sqrt(U_inf * visc * x)
     args.phi_output = [0,1,0,1] # U_inf * y
     
@@ -98,12 +97,12 @@ def plot_fields(model, N=200, bounds=[[5e-2, 1],[0, .05]], Re=5e4, U_inf=1, add_
     for q in [u,v,psi-U_inf*yy]:
         fig, ax = plot_quantity(q, x, y, label=labels.pop(0))
         ax.plot(x, bl_thickness(x, visc[0], U_inf[0]), 'k--', label='BL thickness')
-        # if q is u: 
-        #     ax.text(0.7, 0.07, f'Relative error: {err_u:.2f}\%', transform=ax.transAxes)
-        #     plt.savefig('fp_u_model.png', bbox_inches='tight', dpi=256)
-        # elif q is v: 
-        #     ax.text(0.7, 0.07, f'Relative error: {err_v:.2f}\%', transform=ax.transAxes)
-        #     plt.savefig('fp_v_model.png', bbox_inches='tight', dpi=256)
+        if q is u: 
+            ax.text(0.7, 0.07, f'Relative error: {err_u:.2f}\%', transform=ax.transAxes)
+            # plt.savefig('fp_u_model.png', bbox_inches='tight', dpi=256)
+        elif q is v: 
+            ax.text(0.7, 0.07, f'Relative error: {err_v:.2f}\%', transform=ax.transAxes)
+            # plt.savefig('fp_v_model.png', bbox_inches='tight', dpi=256)
         plt.show()
 
 def get_quantities(model, N=200, bounds=[[5e-2, 1],[0, .05]], Re=5e4, U_inf=1):
@@ -153,12 +152,7 @@ def main():
     change_parameters(args, data_size=n_train)
 
     data_file = f'boundary-layer/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}'
-
-    # checkpoint = 'incompressible_3SHWCO_checkpoint_1783' # [3]*1, w/ sched,
-
-    # checkpoint = 'incompressible_G2KLXA_checkpoint_1810' # [6]*1, out=[0,0,0,0]
-    # checkpoint = 'incompressible_KP4QVS_checkpoint_1602' # [6]*1, out=[.5,0,.5,.5]
-    checkpoint = 'incompressible_78DSCZ_checkpoint_1880' # [6]*1, out=[0,1,0,1]
+    checkpoint = '' # input checkpoint name
 
 
     model = load_model(f'{checkpoint}.tar', name=data_file, args=args, initial_optm='lbfgs')

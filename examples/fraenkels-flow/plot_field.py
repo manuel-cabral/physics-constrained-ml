@@ -76,9 +76,6 @@ def plot_fields(model, N=200, bounds=[[-3,3],[-3,3]], vort=1, R=1, add_noise=Fal
     u,v = u.reshape(N,N), v.reshape(N,N)
     psi = model.psi(points).detach().numpy().reshape(N,N)
 
-    # u,v = u/.5, v/.5
-    # u,v = u/1.5, v/1.5
-
     u_teo, v_teo, psi_teo = quantities(xx, yy, vort, R,)
 
     mask = xx**2 + yy**2 <= R**2
@@ -92,49 +89,14 @@ def plot_fields(model, N=200, bounds=[[-3,3],[-3,3]], vort=1, R=1, add_noise=Fal
     if add_noise: 
         for q in [u,v,psi]: q = add_noise(q)
 
-    # labels = ['$|u_{target}-u|$', '$|v_{target}-v|$', '$|\psi_{target}-\psi|$']
-    # names = ['u_error', 'v_error', 'psi_error']
-    # for q in [u_teo-u, v_teo-v, psi_teo-psi]:
-
     labels = ['$u$', '$u_{target}$', '$|u_{target}-u|$', '$v$', '$v_{target}$', '$|v_{target}-v|$', '$\psi$', '$\psi_{target}$', '$|\psi_{target}-\psi|$']
     names = ['u', 'u_target', 'u_error', 'v', 'v_target', 'v_error', 'psi', 'psi_target', 'psi_error']
     for q in [u, u_teo, u_teo-u, v, v_teo, v_teo-v, psi, psi_teo, psi_teo-psi]:
-    # labels = ['$u$', '$u_{target}$']
-    # names = ['u', 'u_target']
-    # for q in [u, u_teo]:
         fig, ax = plot_quantity(q, x, y, label=labels.pop(0))
         circle = plt.Circle((0,0), R, color='firebrick', fill=True, alpha=.3)
         ax.add_artist(circle)
         # plt.savefig(f'{names.pop(0)}.png', bbox_inches='tight', dpi=256)
         plt.show()
-
-    # curl = model.curl(points).detach().numpy()
-    # u1, v1 = curl.T
-    # # curl = curl.reshape(N,N)
-    # curl_check = model.curl_check(points)
-    # u2, v2 = curl_check
-    # # curl_check = curl_check.reshape(N,N)
-
-
-    # fig, ax = plot_quantity(np.sqrt(u1**2+v1**2).reshape(N,N), x, y, label='Curl')
-    # circle = plt.Circle((0,0), R, color='firebrick', fill=True, alpha=.3)
-    # ax.add_artist(circle)
-    # plt.show()
-
-    # fig, ax = plot_quantity(np.sqrt(u2**2+v2**2).reshape(N,N), x, y, label='Curl check')
-    # circle = plt.Circle((0,0), R, color='firebrick', fill=True, alpha=.3)
-    # ax.add_artist(circle)
-    # plt.show()
-
-
-    # div = model.divergence(points).detach().numpy()
-    # div = div.reshape(N,N)
-
-    # fig, ax = plot_quantity(div, x, y, label='Curl')
-    # circle = plt.Circle((0,0), R, color='firebrick', fill=True, alpha=.3)
-    # ax.add_artist(circle)
-    # plt.show()
-
 
 def main():
     n_train, n_val, n_test  = 1e3, 5e3, 1
@@ -142,29 +104,12 @@ def main():
     
     change_parameters(args, data_size=n_train)
 
-    # data_file = f'fraenkels-flow/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}_fixedR'
-    # checkpoint = 'incompressible_TEJGWL_checkpoint_1865' # [16]*4, out=[0,0,1,2], fixed radius
-
-    # data_file = f'fraenkels-flow/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}'
-    # checkpoint = 'incompressible_QM1QO1_checkpoint_310' # [16]*4, out=[0,0,1,2]
-
     name = f'fraenkels-flow/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}' 
-    checkpoint = 'incompressible_RTM8FJ_checkpoint_1824'
-
-    name = f'fraenkels-flow/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}_fixedR_p5' 
-    checkpoint = 'incompressible_IHP15A_checkpoint_1983'
-    # name = f'fraenkels-flow/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}_fixedR_1' 
-    # checkpoint = 'incompressible_0T8O35_checkpoint_1998'
-    # name = f'fraenkels-flow/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}_fixedR_1p5' 
-    # checkpoint = 'incompressible_A6E417_checkpoint_1968'
-
-    name = 'test' 
-    checkpoint = 'incompressible_GN7IGU_checkpoint_1937'
+    checkpoint = '' # input checkpoint name
 
     model = load_model(f'{checkpoint}.tar', name=name, args=args, initial_optm='lbfgs')
 
     bounds = [[-2.5,2.5],[-2.5,2.5],[.1,3],[.5,1.5]] # x,y,vort,R
-    # bounds = [[-1.25,1.25],[-1.25,1.25],[.1,3],[.5,1.5]] # x,y,vort,R
 
     vort = 1
     R = .5

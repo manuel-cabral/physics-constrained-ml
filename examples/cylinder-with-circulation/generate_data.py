@@ -93,18 +93,12 @@ def plot_fields(N=200, bounds=[[-3,3],[-3,3]], circulation=0, U_inf=1, R=1, add_
         fig, ax = plot_quantity(q_, x, y, label=labels.pop(0))
         circle = plt.Circle((0,0), R, color='firebrick', fill=True, alpha=.3)
         ax.add_artist(circle)
-        # if q is u: 
-        #     plt.savefig('cyl_u_teo.png', bbox_inches='tight', dpi=256)
-        # elif q is v: 
-        #     plt.savefig('cyl_v_teo.png', bbox_inches='tight', dpi=256)
-        # else:
-        #     plt.savefig('cyl_psi_tilde_teo.png', bbox_inches='tight', dpi=256)
         plt.show()
 
 #! FLAGS
 PLOT_FIELDS = True
 ADD_NOISE = False
-SAVE_DATA = True
+SAVE_DATA = False
 
 
 #! Save datasets

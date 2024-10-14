@@ -1,9 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-import pickle
-from timeit import default_timer as timer
-from datetime import timedelta
 import torch
 plt.style.use('ggplot')
 
@@ -71,8 +68,6 @@ def load_model(checkpoint, name, args, pasta='datasets', folder='best_models', i
 
     return model
 
-from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-from mpl_toolkits.axes_grid1.inset_locator import InsetPosition
 def plot_predictions(circulations, pred, true, labels, quantity='lift', extrapolate=False, fname=None):
     fig, ax = plt.subplots(figsize=(10,8))
     ax.plot(circulations, true, 'k--', label='exact')
@@ -117,7 +112,6 @@ def plot_lift_and_drag(checkpoints, data_file, labels, fname=None):
     cl_preds, cd_preds = [], []
     phi_output = [[0,0,0,0,0],[0,0,0,1,1]]
     for i,checkpoint in enumerate(checkpoints):
-        # args.phi_output = phi_output[i]
         args.phi_output = phi_output[1]
         if i == 1:
             args.normalize_inputs = True
@@ -133,13 +127,6 @@ def plot_lift_and_drag(checkpoints, data_file, labels, fname=None):
     plot_predictions(circulations, cl_preds, cl, labels=labels, quantity='$C_l$', extrapolate=True, fname=f'{fname}_cl.png')
     plot_predictions(circulations, cd_preds, cd, labels=labels, quantity='$C_d$', extrapolate=True, fname=f'{fname}_cd.png')
     return 
-
-# def plot_field(checkpoint, circulation, fname=None):
-#     dataset = load_dataset(1, 0)
-#     model = load_model_from_checkpoint(checkpoint, dataset, args)
-#     plot_cylinder(model, bounds=args.sampling_box, mode='norm', other_args=[circulation], plot_stream=True, kind=checkpoint.split('_')[0], fname=None)
-#     plot_cylinder(model, bounds=args.sampling_box, mode='error', other_args=[circulation], plot_stream=True, kind=checkpoint.split('_')[0], fname=None)
-#     return
 
 def change_parameters(args, data_size=5e2):
     args.kind = 'incompressible'
@@ -163,7 +150,7 @@ def change_parameters(args, data_size=5e2):
 
     args.phi = [[1,0,0,0,-1],[0,1,0,0,-1],[0,0,1,-1,-1]]
 
-    # # args.phi_output = [0,0,0,0] # 1
+    # args.phi_output = [0,0,0,0,0] # 1
     # args.phi_output = [0,0,0,1,1] # U_inf * R
 
 
@@ -176,31 +163,13 @@ def main():
     change_parameters(args, data_size=n_train)
 
     data_file = f'cylinder-with-circulation/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}'
+    
+    checkpoint_base = '' # input the baseline checkpoint name here
+    checkpoint_inc = '' # input the incompressible checkpoint name here
 
-    # ## Checkpoints for n_train = 5e2 and layers = [6]*1
-    # args.layers = [6]*1
-    # checkpoint_no = 'incompressible_9TK2AT_checkpoint_1601' # [6]*1, out=[0,0,0,0,0]
-    # checkpoint_transf = 'incompressible_K18GGI_checkpoint_1519' # [6]*1, out=[0,0,0,1,1]
-
-    # checkpoint_transf = 'incompressible_AHDHPD_checkpoint_1519' # [6]*1, out=[0,0,0,1,1]
-    # checkpoint = 'baseline_8KCAEL_checkpoint_1682' # [6]*1, baseline
-
-    args.layers = [16]*2
-    checkpoint_transf = 'incompressible_U30YM1_checkpoint_1998' # [16]*2, out=[0,0,0,1,1]
-    checkpoint = 'baseline_KD7E0P_checkpoint_1901' # [16]*2, baseline
-
-
-    # ## Checkpoints for n_train = 5e3 and layers = [16]*2
-    # args.layers = [16]*2
-    # checkpoint_no = 'incompressible_500D8Y_checkpoint_164' # [16]*2, out=[0,0,0,0,0]
-    # checkpoint_transf = 'incompressible_UQK4JS_checkpoint_1957' # [16]*2, out=[0,0,0,1,1]
-
-    # checkpoint = 'incompressible_FK34EQ_checkpoint_1472'
-
-    # plot_lift_and_drag([checkpoint_no, checkpoint_transf], data_file, labels=['no transformation', '$U_{\infty}R$ transformation'], fname=None)
-    fname = 'quantities_comparison_6neurons_2layers'
-    plot_lift_and_drag([checkpoint_transf, checkpoint], data_file, labels=['input-output physics', 'no physics'], fname=fname)
-    # plot_field(checkpoint, 0)
+    fname = None
+    plot_lift_and_drag([checkpoint_inc, checkpoint_base], data_file, labels=['input-output physics', 'no physics'], fname=fname)
+    
     return
 
 if __name__ == '__main__':

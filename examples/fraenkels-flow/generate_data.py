@@ -117,27 +117,9 @@ ADD_NOISE = False
 def main():
     bounds = [[-2.5,2.5],[-2.5,2.5],[.1,3],[.5,1.5]] # x,y,vort,R
     
-    # bounds = [[-2.5,2.5],[0,2.5],[.1,3],[.5,1.5]] # x,y,vort,R
-
-    # bounds = [[-2.5,2.5],[-2.5,2.5],[.1,3],[.25,0.75]] # x,y,vort,R
-
-    # scaled = False
-    # R = 1.5
-    # if scaled:
-    #     bounds = [[-2.5*R,2.5*R],[-2.5*R,2.5*R],[.1,3],[R,R]] # x,y,vort,R
-    # else:
-    #     bounds = [[-2.5,2.5],[-2.5,2.5],[.1,3],[R,R]] # x,y,vort,R
-    
-    # vort = 2
-    # bounds = [[-2.5,2.5],[-2.5,2.5],[vort,vort],[.5,1.5]] # x,y,vort,R
-
-    # bounds = [[-2.5/np.sqrt(2),2.5/np.sqrt(2)],[-2.5/np.sqrt(2),2.5/np.sqrt(2)],[.1,3],[1,1]] # x,y,vort,R
-
     if PLOT_FIELDS: 
         vort = 2
         R = 1/np.sqrt(2)
-        # vort = 2
-        # R = 1
 
         plot_fields(N=300, bounds=bounds[:2], vort=vort, R=R, add_noise=ADD_NOISE)
 

@@ -70,9 +70,8 @@ def change_parameters(args, data_size=5e2):
 
     args.phi = [[.5,0,-.5,.5],[-.5,1,-.5,.5]]
 
-    # args.phi_output = [0,1,0,1] #e U_inf * y
     # args.phi_output = [.5,0,.5,.5] # sqrt(U_inf * visc * x)
-    args.phi_output = [0,0,0,0] # 1
+    args.phi_output = [0,1,0,1] #e U_inf * y
 
     return
 
@@ -84,7 +83,9 @@ def main():
     change_parameters(args, data_size=n_train)
 
     name = f'boundary-layer/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}'
+    
     dataset = load_data(name)
+    
     train_model(dataset, args)
 
 if __name__ == '__main__':

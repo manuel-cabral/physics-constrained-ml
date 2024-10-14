@@ -8,6 +8,7 @@ from functorch import vmap, jacrev, hessian
 import src.utils as utils
 
 class NORMALIZE(torch.nn.Module):
+
     def __init__(self, args):
         super().__init__()
         self.args = args
@@ -15,7 +16,6 @@ class NORMALIZE(torch.nn.Module):
     def forward(self, input):
         offset_m = torch.zeros_like(input)
         range_m = torch.zeros_like(input)
-        # print(input)
         for i, (min_val, max_val) in enumerate(self.args.sampling_box):
             if self.args.kind=='incompressible':
                 offset_m[i] = torch.full_like(offset_m[0], min_val)
@@ -25,7 +25,42 @@ class NORMALIZE(torch.nn.Module):
                 range_m[:,i] = torch.full_like(offset_m[:,0], np.abs(max_val - min_val)) # Scale to [-3, 3]
         return 6*(input - offset_m)/range_m - 3
 
+class NORMALIZE(torch.nn.Module):
+    """    
+    Normalizes input tensors to the range [-3, 3] using min/max values from `args.sampling_box`. 
+
+    Args:
+        args: Contains:
+            - sampling_box: List of (min, max) pairs for each feature.
+            - kind: String that determines the axis of normalization.
+
+    Forward:
+        input (Tensor): Input tensor to normalize.
+        Returns: Normalized tensor.
+    """
+    def __init__(self, args):
+        super().__init__()
+        self.args = args
+        sampling_box = torch.tensor(args.sampling_box)  # convert to tensor
+        self.offset = sampling_box[:, 0]  # min values
+        self.range = sampling_box[:, 1] - sampling_box[:, 0]  # max - min
+
+    def forward(self, input):
+        dims = (1,) if self.args.kind == 'incompressible' else (0,) # broadcast to all dimensions
+        offset_m = self.offset.view(-1, *dims).expand_as(input)
+        range_m = self.range.view(-1, *dims).expand_as(input)
+
+        return 6 * (input - offset_m) / range_m - 3
+
+
 class TRANSFORM_INPUT(torch.nn.Module):
+    """Transform input variables to new variables. This is done as a layer as it needs to be differentiable.
+
+    Args:
+        args (Namespace): An argparse.Namespace object containing the following attributes:
+            - phi (list): List of tuples specifying the powers of each input variable
+            - x_vars (list): List of input variable names.
+    """
     def __init__(self, args):
         super().__init__()
         self.args = args
@@ -42,6 +77,32 @@ class TRANSFORM_INPUT(torch.nn.Module):
                 for j,k in enumerate(l):
                     new_vars[:,i] *= torch.pow(input[:,j],k)
         return new_vars
+    
+class TRANSFORM_INPUT(torch.nn.Module):
+    """
+    Applies transformations to input variables based on predefined powers (from `phi`), making the process differentiable.
+
+    Args:
+        args: Contains:
+            - phi: List of tuples specifying powers for the corresponding input variables.
+            - x_vars: List of input variable names.
+    """
+    def __init__(self, args):
+        super().__init__()
+        self.args = args
+        self.phi = torch.tensor(args.phi)  # Convert `phi` to a tensor for easy operations later
+
+    def forward(self, input):
+        # Precompute shape to avoid conditionals and handle 1D or 2D inputs
+        batch_dim = input.shape[0] if input.ndim > 1 else 1
+        new_vars = torch.ones(batch_dim, len(self.phi), dtype=input.dtype, device=input.device)
+
+        # Apply transformations
+        for i, powers in enumerate(self.phi):
+            new_vars[..., i] = torch.prod(torch.pow(input[..., :len(powers)], powers), dim=-1)
+
+        return new_vars
+
 
 class NN(torch.nn.Module):
     """Create a feed-forward neural network, based on the provided arguments.

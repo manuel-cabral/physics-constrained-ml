@@ -142,9 +142,7 @@ def main():
     if PLOT_FIELDS: plot_fields(N=250, bounds=bounds[:2], Re=5e4, U_inf=1, add_noise=ADD_NOISE)
     if PLOT_PROFILE: plot_profile(f_z, v_norm, z_span, z_max=10, fname='fp_profile_teo_placeholder.png')
 
-    n_train = 5e2
-    n_val = 1e3
-    n_test = 1
+    n_train, n_val, n_test  = 5e2, 1e3, 1
     idx = 0
     name = f'boundary_layer/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}'
     

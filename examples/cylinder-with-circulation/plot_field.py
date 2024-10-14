@@ -58,7 +58,6 @@ def change_parameters(args, data_size=5e2):
 
     args.phi = [[1,0,0,0,-1],[0,1,0,0,-1],[0,0,1,-1,-1]]
 
-    # args.phi_output = [0,0,0,0] # 1
     args.phi_output = [0,0,0,1,1] # U_inf * R
 
 
@@ -102,10 +101,10 @@ def plot_fields(model, N=200, bounds=[[-3,3],[-3,3]], circulation=0, U_inf=1, R=
         ax.add_artist(circle)
         if q is u: 
             ax.text(0.7, 0.07, f'Relative error: {err_u:.2f}\%', transform=ax.transAxes)
-            plt.savefig('cyl_u_model.png', bbox_inches='tight', dpi=256)
+            # plt.savefig('cyl_u_model.png', bbox_inches='tight', dpi=256)
         elif q is v: 
             ax.text(0.7, 0.07, f'Relative error: {err_v:.2f}\%', transform=ax.transAxes)
-            plt.savefig('cyl_v_model.png', bbox_inches='tight', dpi=256)
+            # plt.savefig('cyl_v_model.png', bbox_inches='tight', dpi=256)
         plt.show()
 
 def main():
@@ -116,8 +115,8 @@ def main():
 
     data_file = f'cylinder-with-circulation/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}'
 
-    # checkpoint = 'incompressible_9TK2AT_checkpoint_1601' # [6]*1, out=[0,0,0,0,0]
-    checkpoint = 'incompressible_K18GGI_checkpoint_1519' # [6]*1, out=[0,0,0,1,1]
+    checkpoint = '' # input checkpoint name
+
     model = load_model(f'{checkpoint}.tar', name=data_file, args=args, initial_optm='lbfgs')
 
     bounds = [[-3,3],[-3,3],[-5,5],[.5,5],[.1,3]] # x,y,c,U,r

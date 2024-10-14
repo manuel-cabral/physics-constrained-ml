@@ -2,27 +2,6 @@
 modelmode = 0 # 0: nothing (only creates trainer class). 1: train. 2: train and test. 3: test
 checkpoint = None # if modelmode = 2, specify the checkpoint to load the trained model from, else None
 
-# Dataset
-dataset_path = "dataset/" # Dataset path
-cfd_dir = "dataset/RANS" # CFD simulations path
-cfd_sims=  ["airFoil2D_SST_31.577_2.75_2.604_4.088_17.312"] # airFoil2D_SST_90.415_14.684_4.356_6.209_11.299, airFoil2D_SST_33.816_-1.984_6.59_0.0_7.983, airFoil2D_SST_31.577_2.75_2.604_4.088_17.312
-dataset = None # "dataset/test.npy" # dataset file (same file for panels `_panels.npy` expected). Use `None` to generate a new datafile from `cfd_dir`
-dataset_maxsize = None # crop dataset if necessary (use `None` otherwise)
-dataset_sampling_size = 20_000 # points sampled per case (use `None` otherwise)
-sampling_mode = "mesh_density" # choose from "uniform", "mesh_density" or "mix"
-sampling_weight = 0 # sampling weight given to uniform distribution if in mix mode, [0,1]
-sampling_distance = None # (0.0015, 2.5) # distance from the body min/max sampling values
-sampling_box = [(5e-2, 1), (0, 5e-2), (1/7e4,1/3e4),(0,5)] # None # xmin, xmax, ymin, ymax
-
-# Panels
-panels_maxsize = 100
-panels_minlength = None # 0.001
-panels_dist = 'cos' # choose 'cfd' or 'cos'
-panels_eccentricity = 0.95 # in case of 'cos' sampling
-panels_skewness = 0 # in case of 'cos' sampling
-panels_skewness_type = 'linear' # in case of 'cos' sampling; choose 'linear', 'exp' or 'inverse'.
-symm_on = ()
-
 # Model
 x_vars = ["x", "y", "visc", "U_inf"] # MLP inputs (x, y; parameters...)
 y_vars = ["u", "v"] # target output

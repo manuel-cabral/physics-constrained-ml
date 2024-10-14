@@ -2,11 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import pickle
-from timeit import default_timer as timer
-from datetime import timedelta
+from scipy.signal import argrelextrema
 import torch
 plt.style.use('ggplot')
-
 
 # delete if not needed
 ######
@@ -71,9 +69,6 @@ def load_model(checkpoint, name, args, pasta='datasets', folder='best_models', i
 
     return model
 
-# from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-# from mpl_toolkits.axes_grid1.inset_locator import InsetPosition
-from scipy.signal import argrelextrema
 def plot_surface_velocity(checkpoint, data_file, circulation, fname=None):
     fig, ax = plt.subplots(figsize=(10,8))
     theta = np.linspace(0,2*np.pi,1000)
@@ -88,10 +83,6 @@ def plot_surface_velocity(checkpoint, data_file, circulation, fname=None):
     model = load_model(f'{checkpoint}.tar', name=data_file, args=args, initial_optm='lbfgs')
     vel_pred = torch.norm(model.predict(X).detach(), dim=1)
 
-    # theta1, theta2 = theta[argrelextrema(vel_pred.detach().numpy(), np.less)]
-    # print(theta2-theta1)
-
-    # cp_pred = 1 - vel_pred**2/1
     ax.plot(theta, vel_pred, color='black', linewidth=2)
     ax.set_xlabel(r'$\theta$')
     ax.set_ylabel(r'$||\mathbf{u}||$')
@@ -119,12 +110,9 @@ def plot_angles(checkpoint, data_file, circulations, fname=None):
         model = load_model(f'{checkpoint}.tar', name=data_file, args=args, initial_optm='lbfgs')
         vel_pred = torch.norm(model.predict(X).detach(), dim=1)
 
-        # print(theta[argrelextrema(vel_pred.detach().numpy(), np.less)])
         thetas = theta[argrelextrema(vel_pred.detach().numpy(), np.less)]
         min_vel = vel_pred[argrelextrema(vel_pred.detach().numpy(), np.less)]
         
-        # if len(thetas) == 2:
-        #     theta1, theta2 = thetas
         if len(thetas) == 1:
             theta1, theta2 = 0, thetas
         else:
@@ -138,21 +126,6 @@ def plot_angles(checkpoint, data_file, circulations, fname=None):
                     theta2 = thetas[ind2]
                     min2 = min_vel[ind2]
 
-
-
-            # theta1, theta2 = np.partition(min_vel, 2)[0:2]
-
-
-        # print(theta1, theta2)
-        # fig, ax = plt.subplots(figsize=(10,8))
-        # ax.plot(theta, vel_pred, color='black', linewidth=2)
-        # ax.set_xlabel(r'$\theta$')
-        # ax.set_ylabel(r'$||\mathbf{u}||$')
-        # ax.set_title('Surface velocity')
-        # ax.hlines(0, 0, 2*np.pi, color='black', linestyle='--')
-        # plt.show()
-
-        # print(np.abs(theta2-theta1))
         if circulation<0:
             diff[i] = 2*np.pi-np.abs(theta2-theta1)
         else:
@@ -180,24 +153,8 @@ def plot_angles(checkpoint, data_file, circulations, fname=None):
     ax.set_xticks(np.arange(-5,6,1))
     ax.set_yticks([np.pi/2, np.pi, 3*np.pi/2])
     ax.set_yticklabels([r'$\frac{\pi}{2}$', r'$\pi$', r'$\frac{3\pi}{2}$'])
-
-    # ax.set_xticks(np.arange(-15,16,5))
-    # ax.set_yticks([0, np.pi/2, np.pi, 3*np.pi/2, 2*np.pi])
-    # ax.set_yticklabels(['0', r'$\frac{\pi}{2}$', r'$\pi$', r'$\frac{3\pi}{2}$', r'$2\pi$'])
-    
-    # ax.set_yticks([2*np.pi/3, 3*np.pi/4, 5*np.pi/6, 11*np.pi/12, np.pi])
-    # ax.set_yticklabels([r'$\frac{2}{3}\pi$', r'$\frac{3}{4}\pi$', r'$\frac{5}{6}\pi$', r'$\frac{11}{12}\pi$', r'$\pi$'])
     plt.show()
 
-    # # cp_pred = 1 - vel_pred**2/1
-    # ax.plot(theta, vel_pred, color='black', linewidth=2)
-    # ax.set_xlabel(r'$\theta$')
-    # ax.set_ylabel(r'$||\mathbf{u}||$')
-    # ax.set_title('Surface velocity')
-
-    # ax.hlines(0, 0, 2*np.pi, color='black', linestyle='--')
-
-    # plt.show()
     if fname is not None:
         fig.savefig(fname, bbox_inches='tight', dpi=256)
     return
@@ -205,7 +162,6 @@ def plot_angles(checkpoint, data_file, circulations, fname=None):
 
 def change_parameters(args, data_size=5e2):
     args.kind = 'incompressible'
-    # args.kind = 'baseline'
     args.layers = [6]*1 # [n_neurons]*n_layers
     args.n_epochs = 2_000 # n_epochs_adam + n_epochs_lbfgs
     args.n_epochs_adam = 1_000
@@ -244,33 +200,9 @@ def main():
 
     data_file = f'cylinder-with-circulation/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}'
 
-    # ## Checkpoints for n_train = 5e2 and layers = [6]*1
-    args.layers = [6]*1
-    checkpoint = 'incompressible_AHDHPD_checkpoint_1519' # [6]*1, out=[0,0,0,1,1]
-    # checkpoint = 'baseline_8KCAEL_checkpoint_1682' # [6]*1, baseline
+    checkpoint = '' # input the checkpoint name here
 
-    # args.layers = [16]*2
-
-    # checkpoint = 'incompressible_U30YM1_checkpoint_1998' # [16]*2, out=[0,0,0,1,1]
-
-    # args.kind = 'baseline'
-    # args.normalize_inputs = True
-    # args.reduce_inputs = False
-    # args.transform_output = False
-    # args.layers = [16]*2
-    # checkpoint = 'baseline_KD7E0P_checkpoint_1901' # [16]*2, baseline
-
-
-    # ## Checkpoints for n_train = 5e3 and layers = [16]*2
-    # args.layers = [16]*2
-    # checkpoint_no = 'incompressible_500D8Y_checkpoint_164' # [16]*2, out=[0,0,0,0,0]
-    # checkpoint_transf = 'incompressible_UQK4JS_checkpoint_1957' # [16]*2, out=[0,0,0,1,1]
-
-    # checkpoint = 'incompressible_FK34EQ_checkpoint_1472'
-
-    # fname = 'quantities_comparison_6neurons_2layers'
     fname = None
-    fname = 'src/figures/angle_stagnation_points_inc_short.png'
     # plot_surface_velocity(checkpoint, data_file, circulation=-2, fname=fname)
     plot_angles(checkpoint, data_file, circulations=np.linspace(-5,5,100), fname=fname)
     return

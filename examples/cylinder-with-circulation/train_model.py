@@ -74,7 +74,6 @@ def change_parameters(args, data_size=5e2):
     args.phi = [[1,0,0,0,-1],[0,1,0,0,-1],[0,0,1,-1,-1]]
 
     args.phi_output = [0,0,0,1,1] # U_inf * R
-    # args.phi_output = [0,0,0,0,0] # 1
 
     return
 
@@ -86,10 +85,10 @@ def main():
     change_parameters(args, data_size=n_train)
 
     name = f'cylinder-with-circulation/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}'
-    dataset = load_data(name)
-    train_model(dataset, args)
 
-    # baseline_8KCAEL_checkpoint_1682 # 5e2, [6]*1, 1e-2, 2K epochs, 1K Adam, 1K L-BFGS, 1e-2 lr
+    dataset = load_data(name)
+    
+    train_model(dataset, args)
 
 if __name__ == '__main__':
     main()
