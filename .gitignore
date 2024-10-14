@@ -6,6 +6,7 @@ examples/test*
 
 # Dataset *.npy objects
 *.npy
+src/datasets
 
 # Image dir
 imgs/
