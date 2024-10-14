@@ -90,7 +90,7 @@ def plot_fields(N=200, bounds=[[5e-2, 1],[0, .05]], vort=3,  R=1, add_noise=Fals
         a = 3
         lim = psi_max**(1/a)
         levels = np.linspace(-lim, lim,30)**a
-        ax.contour(xx, yy, psi, levels=levels, colors='black')
+        ax.contour(xx, yy, psi, levels=levels, colors='black', linewidths=1)
         # plt.savefig(f'{names.pop(0)}_vort2_Rsqrt2.png', bbox_inches='tight', dpi=256)
         plt.show()
 
@@ -110,8 +110,9 @@ def sample_points(N_points, bounds):
     return points
 
 #! FLAGS
-PLOT_FIELDS = False
+PLOT_FIELDS = True
 ADD_NOISE = False
+SAVE_DATA = False
 
 #! Save datasets
 def main():
@@ -130,7 +131,8 @@ def main():
     
     name = f'fraenkels-flow/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}'
 
-    save_datasets(sample_points, quantities, name, bounds, N_train=int(n_train), N_val=int(n_val), N_test=int(n_test))
+    if SAVE_DATA:
+        save_datasets(sample_points, quantities, name, bounds, N_train=int(n_train), N_val=int(n_val), N_test=int(n_test))
 
 if __name__=='__main__':
     main()
