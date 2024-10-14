@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import os
 from timeit import default_timer as timer
 from datetime import timedelta
@@ -44,8 +43,8 @@ def train_model(dataset, args):
     print(f'Training time: {timedelta(seconds=end-start)}')
 
 def change_parameters(args, data_size=5e2):
-    # args.kind = 'incompressible'
-    args.kind = 'baseline'
+    args.kind = 'incompressible'
+    # args.kind = 'baseline'
     args.layers = [6]*1 # [n_neurons]*n_layers
     args.n_epochs = 2_000 # n_epochs_adam + n_epochs_lbfgs
     args.n_epochs_adam = 1_000
@@ -72,7 +71,7 @@ def change_parameters(args, data_size=5e2):
     args.phi = [[.5,0,-.5,.5],[-.5,1,-.5,.5]]
 
     # args.phi_output = [.5,0,.5,.5] # sqrt(U_inf * visc * x)
-    args.phi_output = [0,1,0,1] #e U_inf * y
+    args.phi_output = [0,1,0,1] # U_inf * y
 
     return
 

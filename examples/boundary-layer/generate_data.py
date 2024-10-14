@@ -133,7 +133,7 @@ def plot_profile(f_z, v_norm, z_span, z_max=10, capped=True, fname=None):
 PLOT_PROFILE = True
 PLOT_FIELDS = True
 ADD_NOISE = False
-SAVE_DATA = False
+SAVE_DATA = True
 
 #! Save datasets
 def main():
@@ -144,10 +144,10 @@ def main():
 
     n_train, n_val, n_test  = 5e2, 1e3, 1
     idx = 0
-    name = f'boundary_layer/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}'
+    name = f'data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}'
     
     if SAVE_DATA:
-        save_datasets(sample_points, quantities, name, bounds, N_train=int(n_train), N_val=int(n_val), N_test=int(n_test))
+        save_datasets(sample_points, quantities, name, bounds, folder='datasets/boundary-layer/', N_train=int(n_train), N_val=int(n_val), N_test=int(n_test))
     
     return
     
