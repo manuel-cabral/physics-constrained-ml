@@ -36,7 +36,7 @@ def train_model(dataset, args):
     # Create model
     model = Model(dataset, args)
     print(model.nn.layers)
-    
+
     # Train model
     start = timer()
     model.train()
@@ -47,7 +47,7 @@ def train_model(dataset, args):
 
 
 def change_parameters(args, data_size=5e2):
-    args.kind = 'incompressible'
+    args.kind = ['baseline', 'incompressible', 'soft incompressible'][0]
     args.layers = [16]*2 # [n_neurons]*n_layers
     args.n_epochs = 2_000 # n_epochs_adam + n_epochs_lbfgs
     args.n_epochs_adam = 1_000

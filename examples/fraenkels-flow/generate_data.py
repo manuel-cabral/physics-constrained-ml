@@ -112,7 +112,7 @@ def sample_points(N_points, bounds):
 #! FLAGS
 PLOT_FIELDS = True
 ADD_NOISE = False
-SAVE_DATA = False
+SAVE_DATA = True
 
 #! Save datasets
 def main():
@@ -124,15 +124,13 @@ def main():
 
         plot_fields(N=300, bounds=bounds[:2], vort=vort, R=R, add_noise=ADD_NOISE)
 
-    n_train = 1e3
-    n_val = 5e3
-    n_test = 1
+    n_train, n_val, n_test = 1e3, 1e3, 1
     idx = 0
     
-    name = f'fraenkels-flow/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}'
+    name = f'data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}'
 
     if SAVE_DATA:
-        save_datasets(sample_points, quantities, name, bounds, N_train=int(n_train), N_val=int(n_val), N_test=int(n_test))
+        save_datasets(sample_points, quantities, name, bounds, folder='datasets/fraenkels-flow/', N_train=int(n_train), N_val=int(n_val), N_test=int(n_test))
 
 if __name__=='__main__':
     main()

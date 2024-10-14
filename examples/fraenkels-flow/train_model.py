@@ -47,7 +47,7 @@ def train_model(dataset, args):
     return model
 
 def change_parameters(args, data_size=5e2):
-    args.kind = 'incompressible'
+    args.kind = ['baseline', 'incompressible', 'soft incompressible'][0]
     args.layers = [16]*2
     args.n_epochs = 2_000
     args.n_epochs_adam = 1_000
@@ -57,7 +57,7 @@ def change_parameters(args, data_size=5e2):
     args.batch_size = int(2**np.floor(np.log2(data_size)))
     args.scheduler = False  
     args.norm_layer = True
-    args.subtract_uniform_flow = True                         
+    args.subtract_uniform_flow = True # if True, set the background flow on model.py to the appropriate value (lines 174/175)                        
     args.x_vars = ["x", "y", "vort", "r"]
 
     if args.kind == 'incompressible':

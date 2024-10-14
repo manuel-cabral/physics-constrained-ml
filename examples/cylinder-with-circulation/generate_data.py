@@ -98,7 +98,7 @@ def plot_fields(N=200, bounds=[[-3,3],[-3,3]], circulation=0, U_inf=1, R=1, add_
 #! FLAGS
 PLOT_FIELDS = True
 ADD_NOISE = False
-SAVE_DATA = False
+SAVE_DATA = True
 
 
 #! Save datasets
@@ -111,10 +111,10 @@ def main():
     n_val = 1e3
     n_test = 1
     idx = 0
-    name = f'cylinder-with-circulation/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}'
+    name = f'data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}'
 
     if SAVE_DATA:
-        save_datasets(sample_points, quantities, name, bounds, N_train=int(n_train), N_val=int(n_val), N_test=int(n_test))
+        save_datasets(sample_points, quantities, name, bounds, folder='datasets/cylinder-with-circulation/', N_train=int(n_train), N_val=int(n_val), N_test=int(n_test))
     
     return
 
