@@ -33,32 +33,6 @@ class NORMALIZE(torch.nn.Module):
         range_m = self.range.view(-1, *dims).expand_as(input)
 
         return 6 * (input - offset_m) / range_m - 3
-
-
-class TRANSFORM_INPUT(torch.nn.Module):
-    """Transform input variables to new variables. This is done as a layer as it needs to be differentiable.
-
-    Args:
-        args (Namespace): An argparse.Namespace object containing the following attributes:
-            - phi (list): List of tuples specifying the powers of each input variable
-            - x_vars (list): List of input variable names.
-    """
-    def __init__(self, args):
-        super().__init__()
-        self.args = args
-
-    def forward(self, input):
-        if len(input.shape)==1:
-            new_vars = torch.ones_like(input[:len(self.args.phi)])
-            for i,l in enumerate(self.args.phi):
-                for j,k in enumerate(l):
-                    new_vars[i] *= torch.pow(input[j],k)
-        else:
-            new_vars = torch.ones_like(input[:,:len(self.args.phi)])
-            for i,l in enumerate(self.args.phi):
-                for j,k in enumerate(l):
-                    new_vars[:,i] *= torch.pow(input[:,j],k)
-        return new_vars
     
 class TRANSFORM_INPUT(torch.nn.Module):
     """
@@ -75,11 +49,9 @@ class TRANSFORM_INPUT(torch.nn.Module):
         self.phi = torch.tensor(args.phi)  # Convert `phi` to a tensor for easy operations later
 
     def forward(self, input):
-        # Precompute shape to avoid conditionals and handle 1D or 2D inputs
         batch_dim = input.shape[0] if input.ndim > 1 else 1
         new_vars = torch.ones(batch_dim, len(self.phi), dtype=input.dtype, device=input.device)
 
-        # Apply transformations
         for i, powers in enumerate(self.phi):
             new_vars[..., i] = torch.prod(torch.pow(input[..., :len(powers)], powers), dim=-1)
 
