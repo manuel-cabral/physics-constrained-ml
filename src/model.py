@@ -8,24 +8,6 @@ from functorch import vmap, jacrev, hessian
 import src.utils as utils
 
 class NORMALIZE(torch.nn.Module):
-
-    def __init__(self, args):
-        super().__init__()
-        self.args = args
-
-    def forward(self, input):
-        offset_m = torch.zeros_like(input)
-        range_m = torch.zeros_like(input)
-        for i, (min_val, max_val) in enumerate(self.args.sampling_box):
-            if self.args.kind=='incompressible':
-                offset_m[i] = torch.full_like(offset_m[0], min_val)
-                range_m[i] = torch.full_like(offset_m[0], np.abs(max_val - min_val)) # Scale to [-3, 3]
-            else:
-                offset_m[:,i] = torch.full_like(offset_m[:,0], min_val)
-                range_m[:,i] = torch.full_like(offset_m[:,0], np.abs(max_val - min_val)) # Scale to [-3, 3]
-        return 6*(input - offset_m)/range_m - 3
-
-class NORMALIZE(torch.nn.Module):
     """    
     Normalizes input tensors to the range [-3, 3] using min/max values from `args.sampling_box`. 
 
