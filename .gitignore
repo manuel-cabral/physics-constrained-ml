@@ -10,9 +10,6 @@ examples/test*
 # Image dir
 imgs/
 
-# frames
-frames/
-
 # Compiled python modules.
 *.pyc
 
