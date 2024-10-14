@@ -1,4 +1,4 @@
-# Physics-Constrained-ML in flow prediction
+# Physics-Constrained-ML in Flow Prediction
 
 ![scheme_git](https://github.com/user-attachments/assets/fc74db4f-fe47-423a-8bd8-1f4fc4258c5a)
 
