@@ -61,13 +61,14 @@ def change_parameters(args, data_size=5e2):
     args.subtract_uniform_flow = True                       
     args.x_vars = ["x", "y", "circ", "U_infty", "r"]
 
-    args.normalize_inputs = False
-    args.reduce_inputs = True
-    args.transform_output = True
-
-    # args.normalize_inputs = True
-    # args.reduce_inputs = False
-    # args.transform_output = False
+    if args.kind == 'incompressible':
+        args.normalize_inputs = False
+        args.reduce_inputs = True
+        args.transform_output = True
+    elif args.kind in ['baseline','soft incompressible']:
+        args.normalize_inputs = True
+        args.reduce_inputs = False
+        args.transform_output = False
 
     args.sampling_box = [[-3,3],[-3,3],[-5,5],[.5,5],[.1,3]] # x,y,c,U,r
 
@@ -79,15 +80,18 @@ def change_parameters(args, data_size=5e2):
 
 
 def main():
+    # Set data size
     n_train, n_val, n_test  = 5e2, 1e3, 1
     idx = 0
     
+    # Change parameters
     change_parameters(args, data_size=n_train)
 
+    # Load data
     name = f'cylinder-with-circulation/data_{n_train:.1e}_{n_val:.1e}_{n_test:.1e}_idx{idx}'
-
     dataset = load_data(name)
-    
+
+    # Train model    
     train_model(dataset, args)
 
 if __name__ == '__main__':
