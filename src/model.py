@@ -228,8 +228,8 @@ class Model(object):
             predictions = self.curl(X) if self.args.kind=='incompressible' else self.nn(X)
 
             if self.args.subtract_uniform_flow: 
-                # predictions[:,0] += X[:,3] # assumes fourth variable of the input is the background uniform flow
-                predictions[:,0] += X[:,1]*X[:,2] # vort*y
+                predictions[:,0] += X[:,3] # assumes fourth variable of the input is the background uniform flow
+                # predictions[:,0] += X[:,1]*X[:,2] # vort*y - only for frankels example!
 
             return predictions
 
