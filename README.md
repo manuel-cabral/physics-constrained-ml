@@ -1,6 +1,6 @@
 # Physics-Constrained-ML in flow prediction
 
-![scheme_git](https://github.com/user-attachments/assets/672192e8-58d4-4f6c-bd88-a1807a0d063c)
+![scheme_git](https://github.com/user-attachments/assets/fc74db4f-fe47-423a-8bd8-1f4fc4258c5a)
 
 Enforcing incompressibility and non-dimensionalization on neural networks for fast and accurate flow predictions. 
 
