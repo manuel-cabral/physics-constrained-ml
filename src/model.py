@@ -290,15 +290,15 @@ class Model(object):
             if self.optimizer==self.optimizer_adam and e_id>=self.args.n_epochs_adam-1:
                 print('\nChanged optimizer from ADAM to LBFGS')
                 # Save model at the end of the end of ADAM.
-                self.save_checkpoint(self.nn.state_dict(), self.optimizer.state_dict(), training_file='partial_models/', name=f'{self.args.kind}_ADAM_{self.args.n_epochs_adam}_set{extra}_{self.model_id}')
+                self.save_checkpoint(self.nn.state_dict(), self.optimizer.state_dict(), training_file='../partial_models/', name=f'{self.args.kind}_ADAM_{self.args.n_epochs_adam}_set{extra}_{self.model_id}')
                 self.optimizer = self.optimizer_lbfgs
 
         
         # Save also the last model to continue training (for testing purposes).
-        self.save_checkpoint(self.nn.state_dict(), self.optimizer.state_dict(), training_file='partial_models/', name=f'{self.args.kind}_LBFGS_{self.args.n_epochs_adam}ad_{self.args.n_epochs-self.args.n_epochs_adam}lb_set{extra}_{self.model_id}')
+        self.save_checkpoint(self.nn.state_dict(), self.optimizer.state_dict(), training_file='../partial_models/', name=f'{self.args.kind}_LBFGS_{self.args.n_epochs_adam}ad_{self.args.n_epochs-self.args.n_epochs_adam}lb_set{extra}_{self.model_id}')
 
         # Training finished with max number of epochs. Save best model.
-        self.save_checkpoint(best_model_state_dict, best_optimizer_state_dict, training_file='best_models/')
+        self.save_checkpoint(best_model_state_dict, best_optimizer_state_dict, training_file='../best_models/')
         print(f'Epoch {e_id:03d}: train_loss* = {train_loss:.4e} | train_err = {train_error:05.2%} | val_loss* = {val_loss:.4e} | val_err = {val_error:05.2%}')
         print(f'\nTraining finished at epoch {self.args.n_epochs - 1}, with best model at epoch {self.epoch}.')
 

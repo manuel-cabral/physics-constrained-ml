@@ -8,6 +8,10 @@ examples/test*
 *.npy
 /datasets/
 
+# trained models
+/partial_models/
+/best_models/
+
 # Image dir
 imgs/
 
