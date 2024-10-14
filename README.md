@@ -347,7 +347,9 @@ This code accompanies the paper titled 'On Physical Constraints in Scientific Ma
 
 ### Get environment working
 
-This project uses no special packages. Regardless, for version control purposes, the same virtual environment can be created with the following command:
+This project uses no special packages. 
+
+Regardless, for version control purposes, the same virtual environment can be created with the following command:
 ```
 conda env create -f environment.yml
 ```
